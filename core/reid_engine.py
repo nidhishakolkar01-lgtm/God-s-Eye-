@@ -18,18 +18,9 @@ class PersonReIDEngine:
     def __init__(self, device: str = "cpu", similarity_threshold: float = 0.70):
         self.device = torch.device(device)
         self.similarity_threshold = similarity_threshold
-        
-        # 1. Initialize Neural Feature Extractor Backbone
-        try:
-            self.model = models.mobilenet_v3_small(weights=models.MobileNet_V3_Small_Weights.DEFAULT)
-            self.model.classifier = torch.nn.Identity()
-            self.model.to(self.device)
-            self.model.eval()
-            self.enabled = True
-            print("[REID-ENGINE] MobileNetV3 Deep Appearance Backbone Loaded Successfully.")
-        except Exception as e:
-            print(f"[REID-ENGINE] Initialization error: {e}")
-            self.enabled = False
+        self.model = None
+        self.enabled = False
+        self._initialized = False
 
         # 2. Standard ReID Image Preprocessing (Aspect Ratio ~1.75:1)
         self.transform = transforms.Compose([
@@ -40,8 +31,26 @@ class PersonReIDEngine:
         ])
         self._embedding_cache: Dict[Any, Tuple[float, np.ndarray]] = {}
 
+    def _ensure_initialized(self):
+        if self._initialized:
+            return
+        self._initialized = True
+        try:
+            print("[REID-ENGINE] Loading MobileNetV3 Deep Appearance Backbone...")
+            self.model = models.mobilenet_v3_small(weights=models.MobileNet_V3_Small_Weights.DEFAULT)
+            self.model.classifier = torch.nn.Identity()
+            self.model.to(self.device)
+            self.model.eval()
+            self.enabled = True
+            print("[REID-ENGINE] MobileNetV3 Deep Appearance Backbone Loaded Successfully.")
+        except Exception as e:
+            print(f"[REID-ENGINE] Initialization error: {e}")
+            self.enabled = False
+
     def extract_embedding(self, frame: np.ndarray, bbox: Tuple[int, int, int, int]) -> Optional[np.ndarray]:
         """Extracts 576D normalized appearance embedding for a single person crop."""
+        if not self._initialized:
+            self._ensure_initialized()
         if not self.enabled:
             return None
 

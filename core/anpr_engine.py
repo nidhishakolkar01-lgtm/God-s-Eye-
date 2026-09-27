@@ -86,8 +86,8 @@ class ANPREngine:
         self.executor = ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="ANPR_Worker")
         
         self.ocr_reader = None
+        self.crnn_reader = None
         self.ocr_initialized = False
-        self._init_ocr()
 
         self.clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
 
@@ -111,15 +111,44 @@ class ANPREngine:
             print(f"[ANPR-ENGINE] Error saving watchlist: {e}")
 
     def _init_ocr(self):
-        try:
-            import easyocr
-            print("[ANPR-ENGINE] Initializing PyTorch OCR Recognizer...")
-            self.ocr_reader = easyocr.Reader(["en"], gpu=False, verbose=False)
-            self.ocr_initialized = True
-            print("[ANPR-ENGINE] OCR Engine initialized successfully.")
-        except Exception as e:
-            print(f"[ANPR-ENGINE] OCR init failed: {e}. Falling back to heuristic character extractor.")
-            self.ocr_initialized = False
+        if self.ocr_initialized:
+            return
+        # Priority 1: High-speed, ultra-lightweight OpenCV DNN ONNX CRNN (<25MB RAM)
+        candidate_paths = [
+            os.path.join(os.path.dirname(__file__), "..", "models", "text_recognition_CRNN_EN_2021sep.onnx"),
+            os.path.abspath("models/text_recognition_CRNN_EN_2021sep.onnx"),
+            "models/text_recognition_CRNN_EN_2021sep.onnx"
+        ]
+        crnn_model_path = None
+        for p in candidate_paths:
+            if os.path.exists(p):
+                crnn_model_path = p
+                break
+
+        if crnn_model_path:
+            try:
+                from core.crnn_helper import CRNN
+                print(f"[ANPR-ENGINE] Initializing OpenCV ONNX CRNN Recognizer ({crnn_model_path})...")
+                self.crnn_reader = CRNN(crnn_model_path)
+                self.ocr_initialized = True
+                print("[ANPR-ENGINE] OpenCV ONNX CRNN Engine loaded successfully (Memory footprint < 25MB).")
+                return
+            except Exception as e:
+                print(f"[ANPR-ENGINE] OpenCV ONNX CRNN init failed: {e}")
+
+        # Priority 2: Optional fallback to PyTorch EasyOCR only if explicitly enabled
+        if os.environ.get("ENABLE_EASYOCR", "0") == "1":
+            try:
+                import easyocr
+                print("[ANPR-ENGINE] Initializing PyTorch EasyOCR Recognizer...")
+                self.ocr_reader = easyocr.Reader(["en"], gpu=False, verbose=False)
+                self.ocr_initialized = True
+                print("[ANPR-ENGINE] EasyOCR Engine initialized successfully.")
+                return
+            except Exception as e:
+                print(f"[ANPR-ENGINE] EasyOCR init failed: {e}")
+
+        self.ocr_initialized = False
 
     def extract_plate_crop(self, vehicle_crop: np.ndarray) -> Tuple[Optional[np.ndarray], Optional[Tuple[int, int, int, int]]]:
         vh, vw = vehicle_crop.shape[:2]
@@ -342,50 +371,78 @@ class ANPREngine:
 
     def _ocr_worker(self, track_id: int, plate_crop: np.ndarray, vehicle_type: str, rel_box: Tuple[int, int, int, int]):
         try:
-            if not self.ocr_initialized or self.ocr_reader is None or plate_crop is None or plate_crop.shape[0] < 12 or plate_crop.shape[1] < 20:
+            if not self.ocr_initialized:
+                self._init_ocr()
+
+            if not self.ocr_initialized or plate_crop is None or plate_crop.shape[0] < 10 or plate_crop.shape[1] < 15:
                 return
 
-            # Super-Resolution Image Enhancement Pipeline (min 240px wide for optimal CRAFT detection)
-            ph, pw = plate_crop.shape[:2]
-            scale = max(2.5, 240.0 / max(float(pw), 1.0))
-            scaled_color = cv2.resize(plate_crop, (int(pw * scale), int(ph * scale)), interpolation=cv2.INTER_LANCZOS4)
+            raw_text = ''
+            ocr_conf = 0.5
 
-            # Pass 1: Scaled color image (preserves contrast on blue, yellow, and white registration plates)
-            res = self.ocr_reader.readtext(
-                scaled_color,
-                allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -',
-                paragraph=False
-            )
+            if self.crnn_reader is not None:
+                # Ultra-fast, low-memory OpenCV DNN ONNX CRNN Inference
+                ph, pw = plate_crop.shape[:2]
+                scale = max(2.0, 160.0 / max(float(pw), 1.0))
+                scaled = cv2.resize(plate_crop, (int(pw * scale), int(ph * scale)), interpolation=cv2.INTER_LANCZOS4)
+                sh, sw = scaled.shape[:2]
+                rbbox = np.array([
+                    [0, sh - 1],
+                    [0, 0],
+                    [sw - 1, 0],
+                    [sw - 1, sh - 1]
+                ], dtype=np.float32)
 
-            # Pass 2: Contrast-enhanced grayscale if Pass 1 had low confidence or no results
-            if not res or len(res) == 0 or max([item[2] for item in res if len(item) >= 3] or [0.0]) < 0.35:
-                gray = cv2.cvtColor(scaled_color, cv2.COLOR_BGR2GRAY)
-                denoised = cv2.bilateralFilter(gray, 7, 50, 50)
-                boosted = self.clahe.apply(denoised)
-                res_boosted = self.ocr_reader.readtext(
-                    boosted, 
+                text_out = self.crnn_reader.infer(scaled, rbbox)
+                if not text_out or len(text_out) < 4:
+                    gray = cv2.cvtColor(scaled, cv2.COLOR_BGR2GRAY)
+                    denoised = cv2.bilateralFilter(gray, 5, 50, 50)
+                    boosted = self.clahe.apply(denoised)
+                    boosted_bgr = cv2.cvtColor(boosted, cv2.COLOR_GRAY2BGR)
+                    text_out2 = self.crnn_reader.infer(boosted_bgr, rbbox)
+                    if text_out2 and len(text_out2) > len(text_out or ''):
+                        text_out = text_out2
+
+                raw_text = (text_out or '').strip().upper()
+                ocr_conf = 0.85 if len(raw_text) >= 6 else 0.60
+
+            elif self.ocr_reader is not None:
+                # Super-Resolution Image Enhancement Pipeline for EasyOCR
+                ph, pw = plate_crop.shape[:2]
+                scale = max(2.5, 240.0 / max(float(pw), 1.0))
+                scaled_color = cv2.resize(plate_crop, (int(pw * scale), int(ph * scale)), interpolation=cv2.INTER_LANCZOS4)
+
+                res = self.ocr_reader.readtext(
+                    scaled_color,
                     allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -',
                     paragraph=False
                 )
-                if res_boosted and len(res_boosted) > 0:
-                    res = res_boosted
-            
-            raw_text = ''
-            ocr_conf = 0.5
-            if res and len(res) > 0:
-                tokens = []
-                conf_sum = 0.0
-                for item in res:
-                    if len(item) >= 2:
-                        txt = str(item[1]).strip()
-                        # Filter out single character noise tokens
-                        if len(txt) > 1 or txt.isalnum():
-                            tokens.append(txt)
-                        if len(item) >= 3 and isinstance(item[2], (float, int)):
-                            conf_sum += float(item[2])
-                raw_text = ' '.join(tokens)
-                if len(tokens) > 0:
-                    ocr_conf = conf_sum / len(tokens)
+
+                if not res or len(res) == 0 or max([item[2] for item in res if len(item) >= 3] or [0.0]) < 0.35:
+                    gray = cv2.cvtColor(scaled_color, cv2.COLOR_BGR2GRAY)
+                    denoised = cv2.bilateralFilter(gray, 7, 50, 50)
+                    boosted = self.clahe.apply(denoised)
+                    res_boosted = self.ocr_reader.readtext(
+                        boosted, 
+                        allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -',
+                        paragraph=False
+                    )
+                    if res_boosted and len(res_boosted) > 0:
+                        res = res_boosted
+                
+                if res and len(res) > 0:
+                    tokens = []
+                    conf_sum = 0.0
+                    for item in res:
+                        if len(item) >= 2:
+                            txt = str(item[1]).strip()
+                            if len(txt) > 1 or txt.isalnum():
+                                tokens.append(txt)
+                            if len(item) >= 3 and isinstance(item[2], (float, int)):
+                                conf_sum += float(item[2])
+                    raw_text = ' '.join(tokens)
+                    if len(tokens) > 0:
+                        ocr_conf = conf_sum / len(tokens)
 
             formatted_plate, format_conf = self.normalize_plate_text(raw_text)
             

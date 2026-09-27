@@ -37,9 +37,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY requirements-docker.txt .
 RUN pip install --no-cache-dir -r requirements-docker.txt
 
-# Pre-cache EasyOCR models into container layer to prevent runtime download latency
-RUN python -c "import easyocr; easyocr.Reader(['en'], gpu=False)"
-
 # Create necessary runtime directories
 RUN mkdir -p /app/evidence /app/static /app/known_faces /app/models /app/sample_footage
 

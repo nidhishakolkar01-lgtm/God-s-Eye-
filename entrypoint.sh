@@ -17,6 +17,10 @@ fi
 # Default PORT fallback if not provided by Cloud Run / Render / Railway
 export PORT="${PORT:-8080}"
 export PYTHONUNBUFFERED=1
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export MALLOC_TRIM_THRESHOLD_=100000
 export YOLO_CONFIG_DIR=/tmp/Ultralytics
 mkdir -p /tmp/Ultralytics
 export OPENCV_FFMPEG_CAPTURE_OPTIONS="rtsp_transport;tcp|fflags;nobuffer|max_delay;0"

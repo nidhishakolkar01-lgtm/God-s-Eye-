@@ -1,6 +1,17 @@
 import os
 # Configure low-latency TCP transport for drone RTSP video feeds across the server
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|max_delay;0"
+# Constrain PyTorch thread count and memory footprint for cloud deployment (512MB RAM cap)
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+import torch
+torch.set_grad_enabled(False)
+try:
+    torch.set_num_threads(1)
+    torch.set_num_interop_threads(1)
+except Exception:
+    pass
 import cv2
 import time
 import json
