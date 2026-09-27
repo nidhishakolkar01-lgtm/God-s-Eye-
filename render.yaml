@@ -7,7 +7,7 @@ services:
   - type: web
     name: trinetra-c2-border-sentry
     runtime: docker
-    plan: standard
+    plan: free
     region: singapore
     dockerfilePath: Dockerfile
     envVars:
