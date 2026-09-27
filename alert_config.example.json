@@ -1,0 +1,10 @@
+{
+  "telegram_enabled": false,
+  "telegram_bot_token": "",
+  "telegram_chat_id": "",
+  "webhook_enabled": false,
+  "webhook_url": "",
+  "cooldown_seconds": 10.0,
+  "last_dispatched": 0.0,
+  "total_alerts_sent": 0
+}

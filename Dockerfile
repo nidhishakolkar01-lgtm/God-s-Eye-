@@ -36,6 +36,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY requirements-docker.txt .
 RUN pip install --no-cache-dir -r requirements-docker.txt
 
+# Pre-cache EasyOCR models into container layer to prevent runtime download latency
+RUN python -c "import easyocr; easyocr.Reader(['en'], gpu=False)"
+
 # Create necessary runtime directories
 RUN mkdir -p /app/evidence /app/static /app/known_faces /app/models /app/sample_footage
 
@@ -47,12 +50,12 @@ COPY sample_footage/ /app/sample_footage/
 COPY known_faces/ /app/known_faces/
 COPY vehicle_watchlist.json /app/
 COPY satellites_tle.json /app/
-COPY yolov8n.pt /app/
+COPY yolov8*.pt /app/
 COPY server.py /app/
 COPY entrypoint.sh /app/
 
-# Ensure entrypoint script has executable permissions
-RUN chmod +x /app/entrypoint.sh
+# Normalize line endings and ensure entrypoint script has executable permissions
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Expose default HTTP C2 port
 EXPOSE 8080

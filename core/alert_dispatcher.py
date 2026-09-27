@@ -38,7 +38,7 @@ class AlertDispatcher:
         self.worker_thread.start()
 
     def _load_config(self):
-        if os.path.exists(self.config_path):
+        if os.path.isfile(self.config_path):
             try:
                 with open(self.config_path, "r", encoding="utf-8") as f:
                     saved = json.load(f)

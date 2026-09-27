@@ -37,8 +37,10 @@ scratch/
 runs/
 *.log
 
-# Large Datasets not needed for inference
+# Large Datasets and oversized weights not needed for container
 dataset_omni/
+weights/
+alert_config.json
 
 # Unit Test Scripts
 test_*.py

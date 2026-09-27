@@ -9,6 +9,11 @@ set -e
 # Ensure runtime directories exist with write permissions
 mkdir -p evidence static known_faces
 
+# Initialize empty alert_config.json if not present
+if [ ! -f alert_config.json ]; then
+    echo '{"telegram_enabled": false, "webhook_enabled": false, "cooldown_seconds": 10.0, "total_alerts_sent": 0}' > alert_config.json
+fi
+
 # Default PORT fallback if not provided by Cloud Run / Render / Railway
 export PORT="${PORT:-8080}"
 export PYTHONUNBUFFERED=1
