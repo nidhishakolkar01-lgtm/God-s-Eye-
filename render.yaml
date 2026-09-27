@@ -15,6 +15,8 @@ services:
         value: 8080
       - key: PYTHONUNBUFFERED
         value: "1"
+      - key: YOLO_CONFIG_DIR
+        value: "/tmp/Ultralytics"
       - key: OPENCV_FFMPEG_CAPTURE_OPTIONS
         value: "rtsp_transport;tcp|fflags;nobuffer|max_delay;0"
     healthCheckPath: /api/telemetry

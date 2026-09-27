@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 
 class PersonReIDEngine:
     """

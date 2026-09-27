@@ -11,6 +11,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PORT=8080 \
+    YOLO_CONFIG_DIR=/tmp/Ultralytics \
     OPENCV_FFMPEG_CAPTURE_OPTIONS="rtsp_transport;tcp|fflags;nobuffer|max_delay;0"
 
 # Install essential system dependencies for OpenCV, PyTorch, and video decoders

@@ -2,6 +2,7 @@ import os
 import cv2
 import time
 import numpy as np
+from typing import Dict, List, Tuple, Optional, Any, Set
 from ultralytics import YOLO
 from core.sensor_pipeline import MultiSpectralSensor
 from core.tracker_analytics import KinematicTracker

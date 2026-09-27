@@ -1,7 +1,7 @@
 import cv2
 import time
 import numpy as np
-from typing import List, Dict, Tuple, Any, Set
+from typing import List, Dict, Tuple, Any, Set, Optional
 
 class ExclusionPolygonZone:
     """
