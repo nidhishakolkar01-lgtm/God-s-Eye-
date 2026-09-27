@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRINETRA-C2 // Omniscient God's Eye & Defense Sentry C2</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+
+  <!-- 1. MILITARY CLASSIFICATION BANNER -->
+  <div class="classification-strip">
+    <span>RESTRICTED // LAW ENFORCEMENT SENSITIVE // MHA CIBMS BORDER AI // SIH 2026 PS 26187</span>
+  </div>
+
+  <!-- 2. TOP COMMAND TELEMETRY RIBBON -->
+  <header class="header-bar">
+    <div class="brand-section">
+      <div class="brand-badge">CIBMS</div>
+      <div>
+        <div class="brand-title">TRINETRA-C2 // BORDER SURVEILLANCE VIDEO ANALYTICS</div>
+        <div class="brand-subtitle">SMART INDIA HACKATHON 2026 | PS 26187 | MINISTRY OF HOME AFFAIRS (MHA)</div>
+      </div>
+    </div>
+
+    <!-- Quick Tool Action Buttons -->
+    <div class="header-actions">
+      <button class="btn-head-action highlight-btn" onclick="openCctvManagerModal()" title="Dynamic RTSP Stream Ingestion & CCTV Device Discovery">[+ CCTV / RTSP]</button>
+      <button class="btn-head-action" onclick="openFarrModal()" style="border-color: var(--c-green); color: var(--c-green);" title="False Alarm Reduction Rate (FARR) & Animal Noise Filter">[FARR] NOISE FILTER</button>
+      <button class="btn-head-action" onclick="openAlertsModal()" style="border-color: var(--c-cyan); color: var(--c-cyan);" title="Multi-Channel Instant Alert Dispatch (Telegram Bot & Webhook)">[ALERTS] TELEGRAM</button>
+      <button class="btn-head-action" id="btn-head-qrt" onclick="openInterdictionModal()" style="border-color: var(--c-red); color: var(--c-red);" title="Autonomous QRT Interdiction Dispatch & Intercept Vectoring">[QRT] INTERDICTION</button>
+      <button class="btn-head-action" id="btn-toggle-multiview" onclick="toggleMultiview()" title="Toggle 2x2 Composite Multi-Camera Sentry Matrix [X]">[GRID] 2x2 MATRIX</button>
+      <button class="btn-head-action" onclick="openGlobalCamsModal()" title="Global Strategic Node Catalog">[CATALOG]</button>
+      <button class="btn-head-action" onclick="openWatchlistModal()" title="View and Enroll Suspect Vehicle License Plates">[ANPR] PLATES</button>
+      <button class="btn-head-action" onclick="openEnrollModal()" title="Enroll a new face into the Biometric Database">[+] FACES</button>
+      <button class="btn-head-action" id="btn-theater" onclick="toggleTheaterMode()" title="Toggle full-width Theater Mode [T]">[T] THEATER</button>
+    </div>
+
+    <div class="telemetry-group">
+      <div class="metric-chip live" id="status-chip">
+        <span class="status-dot"></span> <span id="telem-status">SENTRY SECURE</span>
+      </div>
+      <div class="metric-chip">
+        <span style="color: var(--text-muted)">FARR:</span>
+        <strong id="telem-farr-chip" style="color: var(--c-green)">94.6%</strong>
+      </div>
+      <div class="metric-chip">
+        <span style="color: var(--text-muted)">ALERTS:</span>
+        <strong id="telem-alert-chip" style="color: var(--c-cyan)">READY</strong>
+      </div>
+      <div class="metric-chip" id="qrt-telem-chip">
+        <span style="color: var(--text-muted)">QRT:</span>
+        <strong id="telem-qrt-chip" style="color: var(--c-green)">STANDBY</strong>
+      </div>
+      <div class="metric-chip">
+        <span style="color: var(--text-muted)">FEEDS:</span>
+        <strong id="telem-globalcams-chip" style="color: var(--c-cyan)">12 LIVE</strong>
+      </div>
+      <div class="metric-chip">
+        <span style="color: var(--text-muted)">TURRET:</span>
+        <strong id="telem-turret-chip" style="color: var(--c-cyan)">90° / 90°</strong>
+      </div>
+      <div class="metric-chip">
+        <span style="color: var(--text-muted)">IR-CUT:</span>
+        <strong id="telem-ircut-chip" style="color: var(--c-green)">DAY</strong>
+      </div>
+      <div class="metric-chip">
+        <span style="color: var(--text-muted)">ORBIT:</span>
+        <strong id="telem-satellite-chip" style="color: var(--c-cyan)">5 BIRDS</strong>
+      </div>
+      <div class="metric-chip">
+        <span style="color: var(--text-muted)">REID:</span>
+        <strong id="telem-reid-chip" style="color: var(--c-cyan)">0 G-IDS</strong>
+      </div>
+      <div class="metric-chip">
+        <span style="color: var(--text-muted)">FPS:</span>
+        <strong id="telem-fps" style="color: var(--c-green)">30.0</strong>
+      </div>
+      <div class="metric-chip">
+        <span style="color: var(--text-muted)">LATENCY:</span>
+        <strong id="telem-lat" style="color: #fff">14ms</strong>
+      </div>
+      <div class="metric-chip">
+        <span style="color: var(--text-muted)">ENROLLED:</span>
+        <strong id="telem-enrolled" style="color: var(--c-cyan)">2</strong>
+      </div>
+      <div class="metric-chip">
+        <span style="color: var(--text-muted)">FACES:</span>
+        <strong id="telem-faces" style="color: var(--c-green)">0</strong>
+      </div>
+      <div class="metric-chip">
+        <span style="color: var(--text-muted)">PLATES:</span>
+        <strong id="telem-plates" style="color: var(--c-cyan)">0</strong>
+      </div>
+      <div class="metric-chip">
+        <span style="color: var(--text-muted)">WATCHLIST:</span>
+        <strong id="telem-watchlist" style="color: var(--c-red)">5</strong>
+      </div>
+      <div class="metric-chip" style="font-size: 10px; color: var(--text-muted)">
+        <span id="clock-ist">--:--:-- IST</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 3. MAIN TACTICAL GRID -->
+  <main class="c2-grid" id="main-grid">
+
+    <!-- COLUMN 1: GEOSPATIAL MAP & SECTORS -->
+    <section class="panel panel-left" id="panel-left">
+      <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>GEOSPATIAL & SATELLITE RADAR</span>
+        <div style="display: flex; gap: 4px;">
+          <button class="btn-mini active" id="btn-map-2d" onclick="switchMapView('2D')">2D</button>
+          <button class="btn-mini" id="btn-map-3d" onclick="switchMapView('3D')">3D GLOBE</button>
+          <button class="btn-mini" onclick="openFullGlobeModal()" title="Full-Screen 3D Earth Digital Twin">[EXPAND]</button>
+        </div>
+      </div>
+      <div id="tactical-map" style="position: relative; height: 260px;"></div>
+      <div id="cesium-globe-mini" style="position: relative; height: 260px; display: none; background: #000;"></div>
+      
+      <div class="panel-header" style="border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+        <span>SENTRY FEEDS & CAMERAS</span>
+        <div style="display: flex; gap: 4px;">
+          <button class="btn-mini" id="btn-left-multiview" onclick="toggleMultiview()" title="Toggle 2x2 Composite Multi-Camera Matrix">2x2 GRID</button>
+          <button class="btn-mini" onclick="openCctvModal()" title="Add / Connect Live Camera Node">+ ADD</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="sector-list" id="sector-list"></div>
+      </div>
+    </section>
+
+    <!-- COLUMN 2: EXPANSIVE LIVE PERCEPTION STREAM -->
+    <section class="panel panel-center" id="panel-center">
+      <div class="panel-header">
+        <span>LIVE PERCEPTION & BIOMETRIC FACE STREAM</span>
+        <div class="header-stream-tools">
+          <span id="header-sensor-badge" style="color: var(--c-cyan); font-size: 10px; margin-right: 8px;">YUNET + SFACE + YOLOV8n</span>
+          <button class="btn-mini" onclick="toggleTheaterMode()">EXPAND</button>
+        </div>
+      </div>
+
+      <!-- MULTI-SPECTRAL SENSOR CONTROLS -->
+      <div class="sensor-bar">
+        <button class="btn-sensor godseye-btn active" id="btn-godseye" onclick="toggleGodsEye()" title="Toggle Omniscient God's Eye HUD">[G] GOD'S EYE: ON</button>
+        <button class="btn-sensor active" id="btn-mode-normal" onclick="setSensorMode('NORMAL')">RGB DAYLIGHT</button>
+        <button class="btn-sensor" id="btn-mode-nvg" onclick="setSensorMode('NVG_P43')">PVS-14 NVG</button>
+        <button class="btn-sensor" id="btn-mode-ironbow" onclick="setSensorMode('FLIR_IRONBOW')">FLIR IRONBOW</button>
+        <button class="btn-sensor" id="btn-mode-whot" onclick="setSensorMode('FLIR_WHOT')">FLIR WHITE-HOT</button>
+        <button class="btn-sensor" id="btn-mode-scope" onclick="toggleScopeMask()">SCOPE MASK</button>
+        <button class="btn-sensor" id="btn-zone-toggle" onclick="toggleZone()" title="Toggle Exclusion Polygon / Tripwire Overlay">[Z] ZONE: ON</button>
+        <button class="btn-sensor" id="btn-handoff-toggle" onclick="toggleAutoHandoff()" title="Toggle Autonomous Inter-Camera Sector Handoff">[A] HANDOFF: OFF</button>
+        <button class="btn-sensor reset-btn" id="btn-reset-stream" onclick="resetStreamSensors()" title="Reset to standard optical daylight RGB and clear all sensor filters">[R] RESET STREAM</button>
+      </div>
+
+      <!-- DOMINANT EXPANSIVE VIDEO WRAPPER -->
+      <div class="video-wrapper" id="video-wrapper">
+        <img id="live-stream" src="/api/stream" alt="God's Eye Sentry Stream" />
+        <div class="incursion-alert-banner" id="breach-banner">
+          *** TACTICAL PERIMETER BREACH DETECTED ***
+        </div>
+        <div class="handoff-alert-banner" id="handoff-banner" style="display: none;">
+          *** AUTONOMOUS KINEMATIC HANDOFF ENGAGED ***
+        </div>
+      </div>
+
+      <!-- TACTICAL ACTION DECK -->
+      <div class="control-bar">
+        <button class="btn-tactical highlight-btn" id="btn-deck-multiview" onclick="toggleMultiview()">[GRID] 2x2 MATRIX</button>
+        <button class="btn-tactical" onclick="connectWebcam(0)">[CAM 0] WEBCAM</button>
+        <button class="btn-tactical" onclick="openCctvModal()">[RTSP] CONNECT CCTV</button>
+        <button class="btn-tactical" onclick="switchSector(1)">[1] BORDER FENCE</button>
+        <button class="btn-tactical" onclick="switchSector(2)">[2] THAR FLIR</button>
+        <button class="btn-tactical" onclick="switchSector(3)">[3] CHECKPOST</button>
+        <button class="btn-tactical" id="btn-theater-deck" onclick="toggleTheaterMode()">[T] THEATER</button>
+        <button class="btn-tactical" id="btn-clahe">[C] CLAHE BOOST</button>
+        <button class="btn-tactical" id="btn-mute">[M] UNMUTE AUDIO</button>
+        <button class="btn-tactical alert-btn" id="btn-evidence">[S] EVIDENCE</button>
+      </div>
+
+      <!-- TURRET GIMBAL & HARDWARE ACTUATION DECK -->
+      <div class="gimbal-bar">
+        <div class="gimbal-status-display">
+          <span style="color: var(--c-cyan); font-weight: 800;">TURRET GIMBAL:</span>
+          <span id="gimbal-pan-val" style="color: #fff;">PAN: 90.0°</span>
+          <span id="gimbal-tilt-val" style="color: #fff;">TILT: 90.0°</span>
+          <span id="gimbal-track-mode" class="gimbal-badge active">AUTO-TRACK: ON</span>
+          <span id="gimbal-ircut-mode" class="gimbal-badge ircut">IR-CUT: DAY OPTICAL</span>
+        </div>
+        <div class="gimbal-actions">
+          <button class="btn-mini" onclick="jogTurret(-5, 0)" title="Pan Left 5° [Arrow Left]">&#9664; PAN</button>
+          <button class="btn-mini" onclick="jogTurret(5, 0)" title="Pan Right 5° [Arrow Right]">PAN &#9654;</button>
+          <button class="btn-mini" onclick="jogTurret(0, 5)" title="Tilt Up 5° [Arrow Up]">&#9650; TILT</button>
+          <button class="btn-mini" onclick="jogTurret(0, -5)" title="Tilt Down 5° [Arrow Down]">&#9660; TILT</button>
+          <button class="btn-mini" onclick="centerTurret()" title="Boresight Center 90°/90°">[CENTER]</button>
+          <button class="btn-mini active" id="btn-toggle-autotrack" onclick="toggleAutoTrack()" title="Toggle Visual Tracking Target Lock [U]">[TRACK: ON]</button>
+          <button class="btn-mini" id="btn-toggle-ircut" onclick="toggleIRCut()" title="Toggle OV5647 Day/Night Filter">[IR-CUT]</button>
+          <button class="btn-mini" onclick="openHardwareModal()" title="Inspect Serial UART & Physical Pi/Arduino Setup">[HW SETUP]</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLUMN 3: STSI RADAR & EVIDENCE VAULT -->
+    <section class="panel panel-right" id="panel-right">
+      <div class="panel-header">
+        <span>SECTOR THREAT SEVERITY (STSI)</span>
+        <span style="color: var(--text-muted); font-size: 10px;">RISK MATRIX</span>
+      </div>
+      <div style="padding: 10px;">
+        <div class="stsi-panel" id="stsi-bars"></div>
+      </div>
+
+      <div class="panel-header" style="border-top: 1px solid var(--border-subtle);">
+        <span>ENROLLED BIOMETRICS</span>
+        <span style="color: var(--c-cyan); font-size: 10px;" id="enrolled-badge">DATABASE</span>
+      </div>
+      <div style="padding: 8px 10px; border-bottom: 1px solid var(--border-subtle);">
+        <div class="enrolled-pills" id="enrolled-pills"></div>
+      </div>
+
+      <div class="panel-header" style="border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+        <span>ANPR SCANNED VEHICLES</span>
+        <span style="color: var(--c-cyan); font-size: 10px;" id="anpr-badge">LIVE FEED</span>
+      </div>
+      <div style="padding: 6px 10px; max-height: 120px; overflow-y: auto; border-bottom: 1px solid var(--border-subtle);">
+        <div class="anpr-feed" id="anpr-feed">
+          <div style="color: var(--text-dim); font-size: 10px; text-align: center; padding: 10px;">Awaiting vehicle scans...</div>
+        </div>
+      </div>
+
+      <div class="panel-header" style="border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+        <span>CROSS-CAMERA REID (G-TRACK)</span>
+        <span style="color: var(--c-cyan); font-size: 10px; cursor: pointer;" onclick="openReidModal()" id="reid-status-badge">0 ENTITIES</span>
+      </div>
+      <div style="padding: 6px 10px; max-height: 120px; overflow-y: auto; border-bottom: 1px solid var(--border-subtle);">
+        <div class="reid-feed" id="reid-feed">
+          <div style="color: var(--text-dim); font-size: 10px; text-align: center; padding: 10px;">Awaiting person sightings...</div>
+        </div>
+      </div>
+
+      <div class="panel-header" style="border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+        <span>ORBITAL RECON (SGP4 LIVE)</span>
+        <span style="color: var(--c-cyan); font-size: 10px; cursor: pointer;" onclick="openSatelliteModal()" id="sat-status-badge">5 BIRDS TRACKED</span>
+      </div>
+      <div style="padding: 6px 10px; max-height: 135px; overflow-y: auto; border-bottom: 1px solid var(--border-subtle);">
+        <div class="satellites-feed" id="satellites-feed">
+          <div style="color: var(--text-dim); font-size: 10px; text-align: center; padding: 10px;">Propagating orbital ephemeris...</div>
+        </div>
+      </div>
+
+      <div class="panel-header" style="border-top: 1px solid var(--border-subtle);">
+        <span>CRYPTOGRAPHIC EVIDENCE</span>
+        <span style="color: var(--c-cyan); font-size: 10px;">SEC 65B</span>
+      </div>
+      <div class="panel-body">
+        <div class="evidence-feed" id="evidence-feed"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: CONNECT CCTV / RTSP / WEBCAM -->
+  <div class="modal-overlay" id="modal-cctv" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>CONNECT CAMERA / CCTV / RTSP / PHONE IP</span>
+        <button class="modal-close" onclick="closeCctvModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+          Connect any real-time camera device: USB webcam index (0, 1), CCTV RTSP stream URL, or Mobile Phone IP Webcam URL.
+        </p>
+        
+        <label style="font-size: 11px; color: var(--c-cyan); font-weight: 700;">CAMERA SOURCE / URL:</label>
+        <input type="text" id="input-cctv-url" class="modal-input" placeholder="e.g. 0 or rtsp://admin:pass@192.168.1.100:554/stream or http://192.168.1.5:8080/video" />
+        
+        <div class="quick-presets">
+          <span style="font-size: 10px; color: var(--text-muted);">Quick Presets:</span>
+          <button class="btn-preset" onclick="setCctvInput('0')">Webcam 0</button>
+          <button class="btn-preset" onclick="setCctvInput('1')">Webcam 1</button>
+          <button class="btn-preset" onclick="setCctvInput('sample_footage/border_fence_ladder.mp4')">Border Ladder</button>
+          <button class="btn-preset" onclick="setCctvInput('sample_footage/rvss_border_crossing.mp4')">Thar FLIR</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-tactical" onclick="closeCctvModal()">CANCEL</button>
+        <button class="btn-tactical highlight-btn" onclick="submitCctvSource()">CONNECT STREAM</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ENROLL NEW FACE -->
+  <div class="modal-overlay" id="modal-enroll" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>ENROLL FACE INTO GOD'S EYE BIOMETRIC GRID</span>
+        <button class="modal-close" onclick="closeEnrollModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+          Type the subject's name and enroll their face instantly from the live camera stream or upload a portrait photo.
+        </p>
+
+        <label style="font-size: 11px; color: var(--c-cyan); font-weight: 700;">PERSON'S FULL NAME / ALIAS:</label>
+        <input type="text" id="input-enroll-name" class="modal-input" placeholder="e.g. NIDHI or OFFICER SHARMA" />
+
+        <div style="margin-top: 10px; display: flex; gap: 8px;">
+          <button class="btn-tactical highlight-btn" onclick="enrollCurrentFrame()">[CAPTURE FROM LIVE STREAM]</button>
+          <input type="file" id="input-enroll-file" accept="image/*" style="display: none;" onchange="handleFileUpload(event)" />
+          <button class="btn-tactical" onclick="document.getElementById('input-enroll-file').click()">[UPLOAD PHOTO]</button>
+        </div>
+
+        <div id="enroll-status" style="margin-top: 10px; font-size: 11px; color: var(--c-green);"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-tactical" onclick="closeEnrollModal()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ANPR SUSPECT WATCHLIST & ADD PLATE -->
+  <div class="modal-overlay" id="modal-watchlist" style="display: none;">
+    <div class="modal-card" style="max-width: 540px;">
+      <div class="modal-header">
+        <span>STOLEN VEHICLE & INTERDICTION WATCHLIST</span>
+        <button class="modal-close" onclick="closeWatchlistModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+          Automatic Number Plate Recognition (ANPR) cross-references live scanned vehicles against this database in real time.
+        </p>
+
+        <div style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 10px; margin-bottom: 14px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--c-cyan); margin-bottom: 8px;">ENROLL SUSPECT VEHICLE PLATE:</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <div>
+              <label style="font-size: 10px; color: var(--text-muted);">PLATE NUMBER:</label>
+              <input type="text" id="input-plate-num" class="modal-input" placeholder="e.g. JK 02 B 1892" />
+            </div>
+            <div>
+              <label style="font-size: 10px; color: var(--text-muted);">VEHICLE MODEL / MAKE:</label>
+              <input type="text" id="input-plate-model" class="modal-input" placeholder="e.g. MAHINDRA BOLERO WHITE" />
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <div>
+              <label style="font-size: 10px; color: var(--text-muted);">THREAT CATEGORY:</label>
+              <select id="input-plate-cat" class="modal-input" style="background: #0d1512; color: #fff;">
+                <option value="STOLEN VEHICLE">STOLEN VEHICLE</option>
+                <option value="NARCOTICS TRAFFICKING">NARCOTICS TRAFFICKING</option>
+                <option value="UNAUTHORIZED TRANSIT">UNAUTHORIZED TRANSIT</option>
+                <option value="AUTHORIZED PATROL">AUTHORIZED PATROL (BSF / QRT)</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size: 10px; color: var(--text-muted);">RISK RATING:</label>
+              <select id="input-plate-risk" class="modal-input" style="background: #0d1512; color: #fff;">
+                <option value="CRITICAL THREAT // LEVEL 1">CRITICAL THREAT // LEVEL 1</option>
+                <option value="HIGH ALERT // INTERDICTION">HIGH ALERT // INTERDICTION</option>
+                <option value="ELEVATED // SUSPICIOUS">ELEVATED // SUSPICIOUS</option>
+                <option value="FRIENDLY // BSF SENTRY">FRIENDLY // BSF SENTRY</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-bottom: 8px;">
+            <label style="font-size: 10px; color: var(--text-muted);">ALERT INSTRUCTION FOR SENTRY:</label>
+            <input type="text" id="input-plate-msg" class="modal-input" placeholder="e.g. Engage roadblock. Intercept vehicle immediately." />
+          </div>
+          <button class="btn-tactical highlight-btn" style="width: 100%;" onclick="submitWatchlistEntry()">[+] ENROLL PLATE IN DATABASE</button>
+          <div id="watchlist-add-status" style="margin-top: 6px; font-size: 10px; color: var(--c-green);"></div>
+        </div>
+
+        <div style="font-size: 11px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">CURRENT ACTIVE WATCHLIST FLEET:</div>
+        <div id="watchlist-table-container" style="max-height: 160px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 4px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+            <thead>
+              <tr style="background: rgba(14,25,20,0.9); color: var(--c-cyan); text-align: left;">
+                <th style="padding: 6px 8px;">PLATE</th>
+                <th style="padding: 6px 8px;">CATEGORY</th>
+                <th style="padding: 6px 8px;">MODEL</th>
+                <th style="padding: 6px 8px;">RISK</th>
+              </tr>
+            </thead>
+            <tbody id="watchlist-rows"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-tactical" onclick="closeWatchlistModal()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: 3D DIGITAL TWIN GLOBE & SATELLITE RECONNAISSANCE -->
+  <div class="modal-overlay" id="modal-globe" style="display: none;">
+    <div class="modal-card modal-large" style="width: 95vw; max-width: 1400px; height: 90vh; display: flex; flex-direction: column; padding: 0;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: rgba(8, 12, 16, 0.95); border-bottom: 1px solid var(--border-subtle);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-weight: 800; letter-spacing: 1.5px; color: var(--c-cyan);">GLOBAL DIGITAL TWIN // 3D SATELLITE ORBITAL RECONNAISSANCE</span>
+          <span style="font-size: 10px; color: var(--c-green); background: rgba(0,255,119,0.1); padding: 2px 6px; border: 1px solid var(--c-green); border-radius: 2px;">SGP4 PROPAGATOR ONLINE</span>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button class="btn-mini active" style="color: var(--c-cyan);" onclick="setGlobeBasemap('SATELLITE')">SATELLITE</button>
+          <button class="btn-mini" onclick="setGlobeBasemap('DARK')">CYBER DARK</button>
+          <button class="btn-mini" onclick="flyToLocation(31.604, 74.572, 'SECTOR-01 PUNJAB')">PUNJAB WALL</button>
+          <button class="btn-mini" onclick="flyToLocation(27.023, 70.912, 'SECTOR-02 THAR')">THAR SENTRY</button>
+          <button class="btn-mini" onclick="flyToLocation(32.610, 74.720, 'SECTOR-03 JAMMU')">JAMMU POST</button>
+          <button class="btn-mini" style="color: var(--c-cyan);" onclick="flyToSatellite('CARTOSAT-3')">ISRO CARTOSAT-3</button>
+          <button class="btn-mini" style="color: var(--c-yellow);" onclick="flyToSatellite('EOS-04')">ISRO EOS-04 SAR</button>
+          <button class="modal-close" onclick="closeFullGlobeModal()" style="margin-left: 10px;">&times;</button>
+        </div>
+      </div>
+      <div style="position: relative; flex: 1; min-height: 0; background: #000;">
+        <div id="cesium-globe-full" style="width: 100%; height: 100%;"></div>
+        <!-- Floating Recon HUD Panel over 3D Globe -->
+        <div class="globe-hud-overlay">
+          <div class="globe-hud-card" id="globe-sat-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 12px; font-weight: 800; color: var(--c-cyan);" id="globe-sat-name">ISRO CARTOSAT-3 // ACTIVE RECON</span>
+              <span style="font-size: 9px; color: var(--c-green); border: 1px solid var(--c-green); padding: 1px 4px; border-radius: 2px;">ONLINE</span>
+            </div>
+            <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;" id="globe-sat-payload">PAN 0.28m / MX 1.12m High-Res Optical Reconnaissance (Sun-Sync LEO)</div>
+            <div style="margin-top: 8px; font-size: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 6px;" id="globe-sat-stats">
+              <div>ALTITUDE: <strong id="globe-sat-alt" style="color: #fff">-- km</strong></div>
+              <div>VELOCITY: <strong id="globe-sat-vel" style="color: var(--c-green)">-- km/s</strong></div>
+              <div>SUB-POINT: <strong id="globe-sat-sub" style="color: var(--c-cyan)">--</strong></div>
+              <div>SWATH FOOTPRINT: <strong id="globe-sat-fp" style="color: var(--c-yellow)">-- km</strong></div>
+            </div>
+          </div>
+        <!-- Floating God's Eye CCTV Intercept Window over 3D Globe -->
+        <div id="globe-cctv-intercept" style="display: none; position: absolute; top: 16px; left: 16px; width: 340px; background: rgba(10, 14, 20, 0.94); border: 1px solid var(--c-cyan); box-shadow: 0 0 20px rgba(0,240,255,0.3); border-radius: 4px; overflow: hidden; z-index: 100;">
+          <div style="padding: 6px 10px; background: rgba(0,240,255,0.15); border-bottom: 1px solid var(--c-cyan); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 11px; font-weight: 800; color: var(--c-cyan);" id="globe-cctv-title">CCTV INTERCEPT // CAM-IND-01</span>
+            <button onclick="closeGlobeCctvIntercept()" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 14px;">&times;</button>
+          </div>
+          <div style="position: relative; width: 100%; height: 190px; background: #000;">
+            <img id="globe-cctv-stream-img" src="" style="width: 100%; height: 100%; object-fit: cover;" alt="Live Intercept Feed" />
+            <div style="position: absolute; top: 6px; left: 6px; font-size: 9px; color: #fff; background: rgba(0,0,0,0.6); padding: 2px 5px; border-radius: 2px;">
+              <span class="status-dot" style="display: inline-block; width: 6px; height: 6px; background: var(--c-green); border-radius: 50%; margin-right: 4px;"></span>LIVE INTERCEPT
+            </div>
+            <div id="globe-cctv-mgrs-tag" style="position: absolute; bottom: 6px; left: 6px; font-size: 9px; color: var(--c-cyan); background: rgba(0,0,0,0.7); padding: 2px 5px; font-family: monospace;">MGRS: 43R EQ 5940 9662</div>
+          </div>
+          <div style="padding: 8px 10px; font-size: 10px; color: var(--text-muted);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span>TYPE: <strong id="globe-cctv-type" style="color: #fff">OPTICAL 4K</strong></span>
+              <span>STATUS: <strong style="color: var(--c-green)">ONLINE</strong></span>
+            </div>
+            <div style="margin-bottom: 8px;">LOCATION: <strong id="globe-cctv-loc" style="color: var(--c-cyan)">Wagah Frontier</strong></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+              <button class="btn-mini highlight-btn" onclick="assignActiveInterceptToSlot(1, true)">[ASSIGN PRI / S1]</button>
+              <button class="btn-mini" onclick="assignActiveInterceptToSlot(2, false)">[ASSIGN SLOT 2]</button>
+              <button class="btn-mini" onclick="assignActiveInterceptToSlot(3, false)">[ASSIGN SLOT 3]</button>
+              <button class="btn-mini" onclick="assignActiveInterceptToSlot(4, false)">[ASSIGN SLOT 4]</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SATELLITE CONSTELLATION & SGP4 ORBITAL PASSES -->
+  <div class="modal-overlay" id="modal-satellites" style="display: none;">
+    <div class="modal-card" style="width: 800px; max-width: 95vw;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>TACTICAL RECONNAISSANCE SATELLITE CONSTELLATION (SGP4 EPHEMERIS)</span>
+        <button class="modal-close" onclick="closeSatelliteModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">
+          Live real-time orbital calculations generated via SGP4 mechanics from Celestrak elements. Swath radii determine active sensor footprint over ground sectors.
+        </div>
+        <div id="sat-modal-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 480px; overflow-y: auto;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-tactical highlight-btn" onclick="closeSatelliteModal(); openFullGlobeModal();">[3D GLOBE DIGITAL TWIN]</button>
+        <button class="btn-tactical" onclick="closeSatelliteModal()">CLOSE</button>
+      </div>
+    </div>
+  <!-- MODAL: CROSS-CAMERA REID & TRANSIT INTELLIGENCE -->
+  <div class="modal-overlay" id="modal-reid" style="display: none;">
+    <div class="modal-card" style="width: 860px; max-width: 95vw;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>CROSS-CAMERA RE-IDENTIFICATION & INTER-NODE TRANSIT LEDGER</span>
+        <button class="modal-close" onclick="closeReidModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">
+          Deep appearance features (576D L2-normalized embeddings via MobileNetV3) track subjects seamlessly across disconnected camera views without GPS or facial recognition.
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <!-- Left: Active Global Entities -->
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: var(--c-cyan); margin-bottom: 6px;">GLOBAL CORRELATED ENTITIES (GALLERY):</div>
+            <div id="reid-modal-entities" style="max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+              <div style="color: var(--text-dim); font-size: 10px; text-align: center; padding: 20px;">No global entities currently registered</div>
+            </div>
+          </div>
+          <!-- Right: Inter-Camera Transit Log -->
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: var(--c-amber); margin-bottom: 6px;">INTER-CAMERA TRANSIT DETECTIONS:</div>
+            <div id="reid-modal-transits" style="max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+              <div style="color: var(--text-dim); font-size: 10px; text-align: center; padding: 20px;">No inter-camera transit events recorded</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-tactical" onclick="closeReidModal()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GLOBAL LIVE CAMERA DIRECTORY & OPEN FEEDS GATEWAY -->
+  <div class="modal-overlay" id="modal-global-cams" style="display: none;">
+    <div class="modal-card" style="width: 960px; max-width: 95vw;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <span style="background: var(--c-cyan); color: #000; font-weight: 800; padding: 2px 6px; border-radius: 2px;">GLOBAL DIRECTORY</span>
+          <span>OMNISCIENT OPEN FEEDS & STRATEGIC CAMERA SENTRY GATEWAY</span>
+        </span>
+        <button class="modal-close" onclick="closeGlobalCamsModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span>Geospatial feed catalog across India Frontier, Maritime Ports, High-Speed Corridors, and Allied Global Outposts. Assign any stream directly to 2x2 Matrix Slots (1-4) or Primary Sentry.</span>
+          <button class="btn-mini" onclick="toggleAddCustomCamForm()" id="btn-toggle-add-cam">[+] REGISTER CUSTOM RTSP / IP STREAM</button>
+        </div>
+
+        <!-- Ingest Custom Camera Form (Collapsible) -->
+        <div id="custom-cam-form-container" style="display: none; background: rgba(0,240,255,0.05); border: 1px dashed var(--c-cyan); border-radius: 4px; padding: 12px; margin-bottom: 14px;">
+          <div style="font-size: 11px; font-weight: 800; color: var(--c-cyan); margin-bottom: 8px;">INGEST CUSTOM RTSP / HLS / IP STREAM:</div>
+          <div style="display: grid; grid-template-columns: 2fr 3fr; gap: 8px; margin-bottom: 8px;">
+            <input type="text" id="cust-cam-name" class="modal-input" placeholder="Camera Name (e.g. OUTPOST SECTOR 7 BORDER)" />
+            <input type="text" id="cust-cam-src" class="modal-input" placeholder="Stream Source (rtsp://..., http://..., 0 for USB, or video path)" />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 8px; align-items: center;">
+            <input type="number" step="0.0001" id="cust-cam-lat" class="modal-input" placeholder="Latitude (e.g. 31.604)" />
+            <input type="number" step="0.0001" id="cust-cam-lng" class="modal-input" placeholder="Longitude (e.g. 74.572)" />
+            <input type="text" id="cust-cam-type" class="modal-input" placeholder="Type (e.g. FLIR THERMAL 4K)" />
+            <input type="text" id="cust-cam-loc" class="modal-input" placeholder="Location Name" />
+            <button class="btn-tactical highlight-btn" onclick="submitAddCustomCamera()">REGISTER FEED</button>
+          </div>
+          <div id="cust-cam-status" style="font-size: 10px; margin-top: 4px; color: var(--c-green);"></div>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+          <input type="text" id="global-cam-search" class="modal-input" placeholder="Search by sector name, location, country, or sensor type..." style="flex: 1;" oninput="filterGlobalCameras()" />
+          <div class="filter-pills" style="display: flex; gap: 4px;">
+            <button class="filter-pill active" data-region="ALL" onclick="setRegionFilter('ALL')">ALL REGIONS</button>
+            <button class="filter-pill" data-region="INDIA_FRONTIER" onclick="setRegionFilter('INDIA_FRONTIER')">INDIA FRONTIER</button>
+            <button class="filter-pill" data-region="COASTAL_PORT" onclick="setRegionFilter('COASTAL_PORT')">COASTAL PORTS</button>
+            <button class="filter-pill" data-region="HIGHWAY_CORRIDOR" onclick="setRegionFilter('HIGHWAY_CORRIDOR')">HIGHWAYS</button>
+            <button class="filter-pill" data-region="GLOBAL" onclick="setRegionFilter('GLOBAL')">GLOBAL METROS</button>
+          </div>
+        </div>
+
+        <!-- Camera Cards Grid -->
+        <div id="global-cams-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-height: 440px; overflow-y: auto; padding-right: 4px;">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span style="font-size: 10px; color: var(--text-dim); margin-right: auto;">All video streams run real-time MobileNetV3 ReID, YOLOv8 perception, and YuNet biometric inference.</span>
+        <button class="btn-tactical" onclick="closeGlobalCamsModal()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AUTONOMOUS QRT INTERDICTION DISPATCH & HANDOFF -->
+  <div class="modal-overlay" id="modal-interdiction" style="display: none;">
+    <div class="modal-card" style="width: 960px; max-width: 95vw;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <span style="background: var(--c-red); color: #fff; font-weight: 800; padding: 2px 6px; border-radius: 2px;">QRT DISPATCH</span>
+          <span>AUTONOMOUS QUICK REACTION TEAM INTERDICTION & KINEMATIC VECTORING ENGINE</span>
+        </span>
+        <button class="modal-close" onclick="closeInterdictionModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Top Banner / Kinematic Radar -->
+        <div style="background: rgba(255, 51, 68, 0.08); border: 1px solid var(--c-red); border-radius: 4px; padding: 12px; margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 12px; font-weight: 800; color: var(--c-red); letter-spacing: 1px;">REAL-TIME KINEMATIC INTERCEPT TELEMETRY:</span>
+            <span id="interdiction-threat-badge" style="background: var(--c-red); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 2px;">HOSTILE APPROACH VECTOR</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1.5fr 1fr 1.5fr auto; gap: 12px; align-items: center;">
+            <div>
+              <div style="font-size: 10px; color: var(--text-muted);">HOSTILE TARGET / BEARING:</div>
+              <div id="int-target-intel" style="font-size: 13px; font-weight: 700; color: #fff;">G-01 // PERSON (45.0° @ 3.2 km/h)</div>
+              <div id="int-target-loc" style="font-size: 10px; color: var(--c-cyan); margin-top: 2px;">MGRS: 43R EQ 5940 9662</div>
+            </div>
+            <div>
+              <div style="font-size: 10px; color: var(--text-muted);">PREDICTED BREACH POINT:</div>
+              <div id="int-predicted-mgrs" style="font-size: 12px; font-weight: 700; color: var(--c-yellow);">43R EQ 5942 9665</div>
+              <div id="int-predicted-latlng" style="font-size: 10px; color: var(--text-dim); margin-top: 2px;">31.6044° N, 74.5724° E</div>
+            </div>
+            <div>
+              <div style="font-size: 10px; color: var(--text-muted);">NEAREST QRT INTERCEPT STATION:</div>
+              <div id="int-assigned-unit" style="font-size: 12px; font-weight: 700; color: var(--c-green);">EAGLE-01 (17th BSF Frontier)</div>
+              <div id="int-unit-specs" style="font-size: 10px; color: var(--text-dim); margin-top: 2px;">Armored Light Vehicle | 1.4 km (ETA: 78s)</div>
+            </div>
+            <div>
+              <button class="btn-tactical alert-btn" style="padding: 10px 16px; font-size: 11px; font-weight: 800;" onclick="dispatchQRTOrder()">[DISPATCH INTERDICTION ORDER]</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interdiction Orders History Ledger -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11px; font-weight: 800; color: var(--c-cyan);">DISPATCHED INTERDICTION ORDERS LEDGER (SECTION 65B AUTHENTICATED):</span>
+            <span style="font-size: 10px; color: var(--text-muted);">Digital SHA-256 Hash Seals ensure tamper-proof admissible forensic evidence</span>
+          </div>
+          <div id="interdiction-orders-table-container" style="max-height: 280px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 4px;">
+            <table class="tactical-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
+              <thead>
+                <tr style="background: rgba(0,240,255,0.06); text-align: left; color: var(--c-cyan);">
+                  <th style="padding: 6px 8px;">ORDER UUID</th>
+                  <th style="padding: 6px 8px;">TIMESTAMP (IST)</th>
+                  <th style="padding: 6px 8px;">TARGET</th>
+                  <th style="padding: 6px 8px;">ASSIGNED QRT</th>
+                  <th style="padding: 6px 8px;">INTERCEPT MGRS</th>
+                  <th style="padding: 6px 8px;">SEC 65B HASH SEAL</th>
+                  <th style="padding: 6px 8px;">ACTION</th>
+                </tr>
+              </thead>
+              <tbody id="interdiction-orders-tbody">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 15px;">No active dispatch orders issued yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-tactical" onclick="closeInterdictionModal()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DYNAMIC CCTV & RTSP STREAM MANAGER -->
+  <div class="modal-overlay" id="modal-cctv-manager" style="display: none;">
+    <div class="modal-card" style="width: 960px; max-width: 95vw;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <span style="background: var(--c-cyan); color: #000; font-weight: 800; padding: 2px 6px; border-radius: 2px;">CCTV INGESTION</span>
+          <span>DYNAMIC RTSP STREAM MANAGER & HARDWARE DEVICE DISCOVERY</span>
+        </span>
+        <button class="modal-close" onclick="closeCctvManagerModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+          Plug-and-play video analytics engine for existing border infrastructure. Connect any IP camera RTSP feed, ONVIF stream, HTTP MJPEG stream, or physical USB optical capture sensor without restarting the server.
+        </div>
+
+        <!-- Add New Stream Form -->
+        <div style="background: rgba(0,240,255,0.06); border: 1px solid var(--c-cyan); border-radius: 4px; padding: 12px; margin-bottom: 14px;">
+          <div style="font-size: 11px; font-weight: 800; color: var(--c-cyan); margin-bottom: 8px;">ONBOARD NEW CCTV / RTSP FEED:</div>
+          <div style="display: grid; grid-template-columns: 2fr 3fr; gap: 8px; margin-bottom: 8px;">
+            <input type="text" id="mgr-cam-name" class="modal-input" placeholder="Camera Name (e.g. SECTOR-07 WAGAH NORTH MAST)" />
+            <input type="text" id="mgr-cam-src" class="modal-input" placeholder="Stream Source (rtsp://admin:pass@ip:554/stream1, 0 for USB, or http://...)" />
+          </div>
+          <div style="display: grid; grid-template-columns: 1.5fr 1fr 1.5fr auto; gap: 8px; align-items: center;">
+            <select id="mgr-cam-type" class="modal-input" style="padding: 6px;">
+              <option value="OPTICAL CCTV // ELEVATED MAST">OPTICAL CCTV // ELEVATED MAST</option>
+              <option value="THERMAL RVSS // FORWARD FLIR">THERMAL RVSS // FORWARD FLIR</option>
+              <option value="HIGHWAY HIGH-SPEED ANPR / SENTRY">HIGHWAY HIGH-SPEED ANPR / SENTRY</option>
+              <option value="CHECKPOST TACTICAL SENTINEL">CHECKPOST TACTICAL SENTINEL</option>
+              <option value="OPTICAL USB SENSOR">OPTICAL USB SENSOR</option>
+            </select>
+            <input type="text" id="mgr-cam-mgrs" class="modal-input" placeholder="MGRS (e.g. 43R EQ 5940 9662)" value="43R EQ 5940 9662" />
+            <div style="display: flex; gap: 4px;">
+              <button class="btn-mini" onclick="fillCctvPreset('rtsp://admin:admin123@192.168.1.100:554/ch1')">RTSP</button>
+              <button class="btn-mini" onclick="fillCctvPreset('0')">USB 0</button>
+              <button class="btn-mini" onclick="fillCctvPreset('sample_footage/border_fence_ladder.mp4')">SIM 1</button>
+              <button class="btn-mini" onclick="fillCctvPreset('sample_footage/previews2/night_vision_1.mp4')">SIM 2</button>
+            </div>
+            <button class="btn-tactical highlight-btn" onclick="submitOnboardCamera()">+ CONNECT STREAM</button>
+          </div>
+          <div id="mgr-cam-status" style="font-size: 10px; margin-top: 4px; color: var(--c-green);"></div>
+        </div>
+
+        <!-- Local USB Capture Hardware Scanner -->
+        <div style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 10px; margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 11px; font-weight: 800; color: var(--c-cyan);">LOCAL HARDWARE / USB VIDEO CAPTURE DEVICES:</span>
+            <button class="btn-mini" onclick="scanLocalVideoDevices()">[SCAN CONNECTED DEVICES]</button>
+          </div>
+          <div id="local-devices-list" style="font-size: 10px; color: var(--text-dim);">
+            Click [SCAN CONNECTED DEVICES] to detect local USB webcams, capture cards, or HDMI frame grabbers.
+          </div>
+        </div>
+
+        <!-- Active Camera Feeds Table -->
+        <div>
+          <div style="font-size: 11px; font-weight: 800; color: var(--c-cyan); margin-bottom: 6px;">ACTIVE PROVISIONED CCTV NODES:</div>
+          <div style="max-height: 240px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 4px;">
+            <table class="tactical-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
+              <thead>
+                <tr style="background: rgba(0,240,255,0.06); text-align: left; color: var(--c-cyan);">
+                  <th style="padding: 6px 8px;">ID</th>
+                  <th style="padding: 6px 8px;">NAME / CODENAME</th>
+                  <th style="padding: 6px 8px;">PROTOCOL / SOURCE</th>
+                  <th style="padding: 6px 8px;">RESOLUTION</th>
+                  <th style="padding: 6px 8px;">FPS</th>
+                  <th style="padding: 6px 8px;">STATUS</th>
+                  <th style="padding: 6px 8px; text-align: right;">ACTION</th>
+                </tr>
+              </thead>
+              <tbody id="cctv-manager-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-tactical" onclick="closeCctvManagerModal()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: FALSE ALARM REDUCTION RATE (FARR) & NOISE INTELLIGENCE -->
+  <div class="modal-overlay" id="modal-farr" style="display: none;">
+    <div class="modal-card" style="width: 860px; max-width: 95vw;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <span style="background: var(--c-green); color: #000; font-weight: 800; padding: 2px 6px; border-radius: 2px;">FARR ENGINE</span>
+          <span>FALSE ALARM REDUCTION RATE & ENVIRONMENTAL NOISE SUPPRESSION</span>
+        </span>
+        <button class="modal-close" onclick="closeFarrModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+          Solves the primary operational challenge of border CCTV: Eliminating 90%+ false alarms caused by wildlife (camels, dogs, cattle, birds), windblown foliage, dust storms, and headlight glare using 15-frame spatiotemporal persistence & multi-class taxonomy filtering.
+        </div>
+
+        <!-- Live FARR Performance Metrics Card -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+          <div style="background: rgba(0,255,119,0.08); border: 1px solid var(--c-green); border-radius: 4px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: var(--text-muted);">SUPPRESSION EFFICIENCY (FARR):</div>
+            <div id="farr-stat-percentage" style="font-size: 26px; font-weight: 900; color: var(--c-green); margin-top: 4px;">94.6%</div>
+            <div style="font-size: 9px; color: var(--text-dim); margin-top: 2px;">False Alarms Prevented</div>
+          </div>
+          <div style="background: rgba(0,240,255,0.08); border: 1px solid var(--c-cyan); border-radius: 4px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: var(--text-muted);">SUPPRESSED WILDLIFE / FAUNA:</div>
+            <div id="farr-stat-fauna" style="font-size: 26px; font-weight: 900; color: var(--c-cyan); margin-top: 4px;">0</div>
+            <div style="font-size: 9px; color: var(--text-dim); margin-top: 2px;">Filtered Non-Hostiles</div>
+          </div>
+          <div style="background: rgba(245,158,11,0.08); border: 1px solid var(--c-yellow); border-radius: 4px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: var(--text-muted);">TRANSIENT MOTION GLITCHES:</div>
+            <div id="farr-stat-glitches" style="font-size: 26px; font-weight: 900; color: var(--c-yellow); margin-top: 4px;">0</div>
+            <div style="font-size: 9px; color: var(--text-dim); margin-top: 2px;">Foliage / Dust Shadows</div>
+          </div>
+          <div style="background: rgba(255,51,68,0.08); border: 1px solid var(--c-red); border-radius: 4px; padding: 10px; text-align: center;">
+            <div style="font-size: 10px; color: var(--text-muted);">VERIFIED HUMAN INCURSIONS:</div>
+            <div id="farr-stat-breaches" style="font-size: 26px; font-weight: 900; color: var(--c-red); margin-top: 4px;">0</div>
+            <div style="font-size: 9px; color: var(--text-dim); margin-top: 2px;">High-Threat Alarms Issued</div>
+          </div>
+        </div>
+
+        <!-- Noise Classification Breakdown -->
+        <div style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 12px; margin-bottom: 12px;">
+          <div style="font-size: 11px; font-weight: 800; color: var(--c-cyan); margin-bottom: 8px;">DUAL-TIER PERCEPTION FILTER MATRIX:</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 11px;">
+            <div style="background: rgba(0,255,119,0.04); border-left: 3px solid var(--c-green); padding: 8px;">
+              <div style="color: var(--c-green); font-weight: 700; margin-bottom: 4px;">AUTO-SUPPRESSED (NOISE):</div>
+              <div style="color: var(--text-muted); font-size: 10px; line-height: 1.5;">
+                &bull; Stray Animals (Dogs, Cows, Camels, Birds, Sheep)<br/>
+                &bull; Swaying Border Vegetation & Foliage<br/>
+                &bull; Vehicle Headlight Flickers & Dust Plumes<br/>
+                &bull; Sub-5 Frame Transient Motion Spikes
+              </div>
+            </div>
+            <div style="background: rgba(255,51,68,0.04); border-left: 3px solid var(--c-red); padding: 8px;">
+              <div style="color: var(--c-red); font-weight: 700; margin-bottom: 4px;">HIGH-THREAT ESCALATION:</div>
+              <div style="color: var(--text-muted); font-size: 10px; line-height: 1.5;">
+                &bull; Human Fence Crawling / Scaling / Infiltration<br/>
+                &bull; Perimeter Ladders & Breaching Contraband<br/>
+                &bull; Armed Hostiles & Concealed Objects<br/>
+                &bull; Unauthorized Checkpoint Barrier Breakthroughs
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-tactical" onclick="closeFarrModal()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MULTI-CHANNEL INSTANT ALERT DISPATCH (TELEGRAM & WEBHOOK) -->
+  <div class="modal-overlay" id="modal-alerts" style="display: none;">
+    <div class="modal-card" style="width: 780px; max-width: 95vw;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <span style="background: var(--c-cyan); color: #000; font-weight: 800; padding: 2px 6px; border-radius: 2px;">ALERT DISPATCH</span>
+          <span>INSTANT TELEGRAM BOT & EXTERNAL CIBMS WEBHOOK CONFIGURATION</span>
+        </span>
+        <button class="modal-close" onclick="closeAlertsModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+          Enables non-blocking instant dispatch of breach snapshots, MGRS grid coordinates, threat levels, and Section 65B forensic hashes directly to field commanders' mobile phones via Telegram and defense command servers via REST Webhooks.
+        </div>
+
+        <!-- Telegram Bot Settings -->
+        <div style="background: rgba(0,240,255,0.06); border: 1px solid var(--c-cyan); border-radius: 4px; padding: 12px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11px; font-weight: 800; color: var(--c-cyan);">TELEGRAM BOT ALERT GATEWAY:</span>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+              <input type="checkbox" id="cfg-tg-enabled" />
+              <strong>ENABLE TELEGRAM DISPATCH</strong>
+            </label>
+          </div>
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <input type="text" id="cfg-tg-token" class="modal-input" placeholder="Telegram Bot API Token (e.g. 712345678:ABCdef...)" />
+            <input type="text" id="cfg-tg-chat" class="modal-input" placeholder="Telegram Chat ID (e.g. -100123456789)" />
+          </div>
+          <div style="font-size: 9px; color: var(--text-dim);">
+            To create a bot: Message <code>@BotFather</code> on Telegram &rarr; <code>/newbot</code> &rarr; copy token. To get Chat ID: message <code>@userinfobot</code>.
+          </div>
+        </div>
+
+        <!-- External Webhook Settings -->
+        <div style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 12px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11px; font-weight: 800; color: var(--c-cyan);">EXTERNAL CIBMS REST WEBHOOK:</span>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+              <input type="checkbox" id="cfg-webhook-enabled" />
+              <strong>ENABLE WEBHOOK DISPATCH</strong>
+            </label>
+          </div>
+          <input type="text" id="cfg-webhook-url" class="modal-input" placeholder="Webhook URL (e.g. https://c2-command.defense.in/api/v1/incidents)" style="width: 100%; margin-bottom: 6px;" />
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 10px; color: var(--text-muted);">ALERT COOLDOWN (SECONDS):</span>
+            <input type="number" id="cfg-cooldown" class="modal-input" style="width: 70px;" value="10" min="2" max="60" />
+          </div>
+        </div>
+
+        <!-- Actions & Test Dispatch -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 6px;">
+          <button class="btn-tactical highlight-btn" onclick="saveAlertsConfig()">[SAVE CONFIGURATION]</button>
+          <button class="btn-tactical alert-btn" onclick="sendTestAlert()">[SEND TEST ALERT NOW]</button>
+        </div>
+        <div id="alerts-config-status" style="font-size: 10px; margin-top: 6px; color: var(--c-green);"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-tactical" onclick="closeAlertsModal()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: HARDWARE GATEWAY & TURRET PERIPHERALS -->
+  <div class="modal-overlay" id="modal-hardware" style="display: none;">
+    <div class="modal-card" style="width: 820px; max-width: 95vw;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>HARDWARE PERIPHERAL BRIDGE // RASPBERRY PI 3 & ARDUINO TURRET</span>
+        <button class="modal-close" onclick="closeHardwareModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+          Seamless dual-driver architecture: Operates in High-Fidelity Virtual Loopback mode today with real servo kinematics, and automatically actuates physical servos and OV5647 IR-Cut filters when hardware is plugged into USB/UART.
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <!-- Left: Real-Time Actuator Status -->
+          <div style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 10px;">
+            <div style="font-size: 11px; font-weight: 800; color: var(--c-cyan); margin-bottom: 8px;">ACTUATOR REGISTERS & GIMBAL STATE:</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
+              <div>PAN ANGLE: <strong id="hw-pan-val" style="color: #fff">90.0°</strong></div>
+              <div>TILT ANGLE: <strong id="hw-tilt-val" style="color: #fff">90.0°</strong></div>
+              <div>AZIMUTH OFFSET: <strong id="hw-az-val" style="color: var(--c-cyan)">0.0°</strong></div>
+              <div>ELEVATION: <strong id="hw-el-val" style="color: var(--c-cyan)">0.0°</strong></div>
+              <div>AUTO-TRACKING: <strong id="hw-track-val" style="color: var(--c-green)">ACTIVE</strong></div>
+              <div>AUTO-PATROL: <strong id="hw-patrol-val" style="color: var(--text-muted)">OFF</strong></div>
+            </div>
+            <div style="margin-top: 10px; border-top: 1px solid var(--border-subtle); padding-top: 8px;">
+              <div style="font-size: 10px; color: var(--text-muted);">OV5647 5MP IR-CUT FILTER COIL:</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                <strong id="hw-ircut-val" style="font-size: 11px; color: var(--c-green);">OPTICAL_IR_BLOCK [DAYLIGHT]</strong>
+                <button class="btn-mini" onclick="toggleIRCut()">TOGGLE COIL</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Physical Hardware Pinouts & Drivers -->
+          <div style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 10px;">
+            <div style="font-size: 11px; font-weight: 800; color: var(--c-cyan); margin-bottom: 8px;">PHYSICAL WIRING PINOUT GUIDE:</div>
+            <div style="font-size: 10px; color: var(--text-main); line-height: 1.5;">
+              <div style="color: var(--c-yellow); font-weight: 700; margin-bottom: 2px;">ARDUINO UNO R3 + ULN2003 + 28BYJ-48:</div>
+              &bull; <strong>Pan (Azimuth)</strong>: 28BYJ-48 Stepper &rarr; ULN2003 <strong>Pins 8, 9, 10, 11</strong><br/>
+              &bull; <strong>Tilt (Elevation)</strong>: SG90 Micro-Servo &rarr; Arduino <strong>Pin 6 (PWM)</strong><br/>
+              &bull; <strong>Rangefinder Tripwire</strong>: HC-SR04 &rarr; <strong>Trig: Pin 12 | Echo: Pin 13</strong><br/>
+              &bull; <strong>Power</strong>: 5V & GND to breadboard rails (USB COM @ 115200 Baud)<br/>
+              <div style="margin-top: 6px; padding: 4px 6px; background: rgba(0,240,255,0.08); border-left: 2px solid var(--c-cyan); font-family: monospace;">
+                RANGEFINDER DIST: <strong id="hw-us-dist" style="color: var(--c-green)">-- cm</strong> | TRIPWIRE: <strong id="hw-us-alert" style="color: var(--c-cyan)">SECURE</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Serial UART Connection Controls -->
+        <div style="background: rgba(12,20,16,0.8); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11px; font-weight: 800; color: var(--c-cyan);">SERIAL UART GATEWAY:</span>
+            <span id="hw-mode-badge" style="font-size: 9px; padding: 2px 6px; border: 1px solid var(--c-cyan); border-radius: 2px; color: var(--c-cyan);">HIGH-FIDELITY VIRTUAL BRIDGE</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="select-serial-port" class="modal-input" style="flex: 1; padding: 6px;" onchange="document.getElementById('input-serial-port').value = this.value;">
+              <option value="">-- Detect Available Ports --</option>
+            </select>
+            <input type="text" id="input-serial-port" class="modal-input" placeholder="e.g. COM3 or /dev/ttyUSB0" style="width: 140px;" />
+            <button class="btn-tactical highlight-btn" onclick="submitConnectSerial()">[CONNECT HARDWARE PORT]</button>
+            <button class="btn-tactical" onclick="centerTurret()">[BORESIGHT CALIBRATION]</button>
+          </div>
+          <div id="serial-connect-status" style="margin-top: 6px; font-size: 10px; color: var(--c-green);"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-tactical" onclick="closeHardwareModal()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

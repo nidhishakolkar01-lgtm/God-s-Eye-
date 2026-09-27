@@ -1,0 +1,21 @@
+# ======================================================================
+# PROJECT TRINETRA-C2 // RENDER.COM 1-CLICK BLUEPRINT
+# AI Border Surveillance Video Analytics (SIH PS 26187 // MHA CIBMS)
+# ======================================================================
+
+services:
+  - type: web
+    name: trinetra-c2-border-sentry
+    runtime: docker
+    plan: standard
+    region: singapore
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: OPENCV_FFMPEG_CAPTURE_OPTIONS
+        value: "rtsp_transport;tcp|fflags;nobuffer|max_delay;0"
+    healthCheckPath: /api/telemetry
+    autoDeploy: true

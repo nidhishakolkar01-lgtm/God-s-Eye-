@@ -1,0 +1,40 @@
+version: '3.8'
+
+# ======================================================================
+# PROJECT TRINETRA-C2 // DOCKER COMPOSE ORCHESTRATION
+# AI Border Surveillance Video Analytics (SIH PS 26187 // MHA CIBMS)
+# ======================================================================
+
+services:
+  trinetra-c2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: trinetra-c2:latest
+    container_name: trinetra-c2-sentry
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-8080}:8080"
+    environment:
+      - PORT=8080
+      - PYTHONUNBUFFERED=1
+      - OPENCV_FFMPEG_CAPTURE_OPTIONS=rtsp_transport;tcp|fflags;nobuffer|max_delay;0
+    volumes:
+      # Persistent Section 65B Forensic Evidence Ledger & Snapshots
+      - ./evidence:/app/evidence
+      # Persistent Enrolled Facial Biometrics Database
+      - ./known_faces:/app/known_faces
+      # Multi-Channel Alert Configuration (Telegram & Webhook)
+      - ./alert_config.json:/app/alert_config.json
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/telemetry || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 4096M
+        reservations:
+          memory: 1024M

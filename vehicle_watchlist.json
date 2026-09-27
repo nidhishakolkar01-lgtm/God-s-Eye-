@@ -1,0 +1,74 @@
+{
+    "JK 02 B 1892": {
+        "plate": "JK 02 B 1892",
+        "category": "STOLEN VEHICLE",
+        "risk": "CRITICAL THREAT // LEVEL 1",
+        "vehicle_model": "MAHINDRA BOLERO CAMPER",
+        "incident_ref": "FIR-2026/LOC-994",
+        "origin": "BORDER TRANSIT CORRIDOR",
+        "alert_msg": "CRITICAL: Stolen Bolero Camper reported moving towards border checkpost. Engage interceptors."
+    },
+    "PB 02 AK 4921": {
+        "plate": "PB 02 AK 4921",
+        "category": "NARCOTICS TRAFFICKING",
+        "risk": "HIGH ALERT // INTERDICTION",
+        "vehicle_model": "TATA 407 FREIGHT TRUCK",
+        "incident_ref": "NCB-INTEL-8411",
+        "origin": "PUNJAB HIGHWAY FEEDER",
+        "alert_msg": "ALERT: Vehicle flagged for trans-border contraband smuggling. Search vehicle thoroughly."
+    },
+    "DL 8C AM 1102": {
+        "plate": "DL 8C AM 1102",
+        "category": "UNAUTHORIZED TRANSIT",
+        "risk": "ELEVATED // SUSPICIOUS LOGISTICS",
+        "vehicle_model": "HYUNDAI CRETA SILVER",
+        "incident_ref": "IB-WATCH-032",
+        "origin": "FORWARD ACCESS ROAD",
+        "alert_msg": "WARNING: Unregistered transit vehicle detected in sterile military perimeter zone."
+    },
+    "HR 26 DQ 5551": {
+        "plate": "HR 26 DQ 5551",
+        "category": "AUTHORIZED PATROL",
+        "risk": "FRIENDLY // BSF QRT",
+        "vehicle_model": "MARUTI GYPSY MIL-SPEC",
+        "incident_ref": "BSF-FLEET-HQ",
+        "origin": "SECTOR 03 PATROL OUTPOST",
+        "alert_msg": "VERIFIED: Border Security Force Quick Reaction Team unit. Transit cleared."
+    },
+    "PB 08 CX 7720": {
+        "plate": "PB 08 CX 7720",
+        "category": "STOLEN VEHICLE",
+        "risk": "HIGH THREAT // STOLEN FLEET",
+        "vehicle_model": "TOYOTA INNOVA BLACK",
+        "incident_ref": "FIR-2026/AMR-112",
+        "origin": "AMRITSAR FEEDER LINE",
+        "alert_msg": "ALERT: Stolen passenger vehicle reported in cross-district alert."
+    },
+    "GW 5227 23": {
+        "plate": "GW 5227 23",
+        "category": "UNAUTHORIZED TRANSIT",
+        "risk": "HIGH ALERT // INTERDICTION",
+        "vehicle_model": "COMMERCIAL TRANSIT SUV",
+        "incident_ref": "BORDER-INTEL-5227",
+        "origin": "HIGHWAY TRANSIT CORRIDOR",
+        "alert_msg": "ALERT: Vehicle flagged for unauthorized entry into restricted highway transit corridor."
+    },
+    "M 24 GE 1840": {
+        "plate": "M 24 GE 1840",
+        "category": "CONTRABAND INTERCEPT",
+        "risk": "CRITICAL THREAT // LEVEL 1",
+        "vehicle_model": "HEAVY HAULAGE FREIGHTER",
+        "incident_ref": "CUSTOMS-INTEL-1840",
+        "origin": "STRATEGIC TRANSIT AXIS",
+        "alert_msg": "CRITICAL: Heavy freight transport flagged for suspected contraband. Direct to inspection bay."
+    },
+    "B5M1": {
+        "plate": "B5M1",
+        "category": "HIGHWAY TRANSIT",
+        "risk": "NOMINAL // MONITORED",
+        "vehicle_model": "SEDAN COMMUTER",
+        "incident_ref": "ANPR-CORRIDOR-B5M1",
+        "origin": "HIGHWAY CORRIDOR",
+        "alert_msg": "Monitored passenger vehicle traversing highway perimeter."
+    }
+}

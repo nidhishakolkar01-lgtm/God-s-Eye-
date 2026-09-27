@@ -1,0 +1,53 @@
+# Git and VCS
+.git
+.github
+.gitignore
+
+# Virtual Environments
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+
+# IDE & Editor Settings
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Agentic / Scratch & Local Experiment Dumps
+.agents/
+scratch/
+runs/
+*.log
+
+# Large Datasets not needed for inference
+dataset_omni/
+
+# Unit Test Scripts
+test_*.py
+test_audit_*.jpg
+verification_*.jpg
+live_*_verified.jpg
+crop_*.jpg
+chk_*.jpg
+hwy_*.jpg
+anpr_*_preview.jpg
+prototype_*.jpg
+pure_telemetry_*.jpg

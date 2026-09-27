@@ -1,0 +1,30 @@
+# ======================================================================
+# PROJECT TRINETRA-C2 // FLY.IO 1-CLICK DEPLOYMENT CONFIG
+# AI Border Surveillance Video Analytics (SIH PS 26187 // MHA CIBMS)
+# ======================================================================
+
+app = "trinetra-c2-border"
+primary_region = "bom"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[[http_service.checks]]
+  grace_period = "30s"
+  interval = "30s"
+  method = "GET"
+  timeout = "10s"
+  path = "/api/telemetry"
+
+[env]
+  PORT = "8080"
+  PYTHONUNBUFFERED = "1"
+  OPENCV_FFMPEG_CAPTURE_OPTIONS = "rtsp_transport;tcp|fflags;nobuffer|max_delay;0"

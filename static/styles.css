@@ -1,0 +1,1115 @@
+/* ===================================================================
+   TRINETRA-C2 // TACTICAL STYLING & GOD'S EYE CYBER HUD
+   Theme: Defense-grade Glassmorphism, Deep Obsidian, CRT Scanlines
+   =================================================================== */
+
+:root {
+  --bg-deep: #030605;
+  --bg-panel: rgba(7, 13, 10, 0.94);
+  --bg-panel-header: rgba(14, 25, 20, 0.95);
+  
+  --c-green: #00ff77;
+  --c-cyan: #00f0ff;
+  --c-red: #ff2a4b;
+  --c-amber: #f59e0b;
+  --c-blue: #3b82f6;
+
+  --border-subtle: rgba(0, 240, 255, 0.12);
+  --border-active: rgba(0, 240, 255, 0.45);
+  --border-alert: rgba(255, 42, 75, 0.5);
+
+  --text-main: #dcfce7;
+  --text-muted: #86efac;
+  --text-dim: #4b6356;
+
+  --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-deep);
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 1. CLASSIFICATION STRIP */
+.classification-strip {
+  background: #120507;
+  border-bottom: 1px solid rgba(255, 42, 75, 0.3);
+  color: #ff6b81;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-align: center;
+  padding: 3px 0;
+  text-transform: uppercase;
+  z-index: 100;
+}
+
+/* TOP COMMAND HEADER */
+.header-bar {
+  height: 48px;
+  background: rgba(5, 10, 8, 0.98);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  gap: 12px;
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-badge {
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid var(--c-cyan);
+  color: var(--c-cyan);
+  font-weight: 900;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  letter-spacing: 1px;
+}
+
+.brand-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.8px;
+}
+
+.brand-subtitle {
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 0.4px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-head-action {
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  border-radius: 3px;
+  color: var(--c-cyan);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 5px 9px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-head-action:hover {
+  background: rgba(0, 240, 255, 0.22);
+  border-color: var(--c-cyan);
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+}
+
+.telemetry-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.metric-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.metric-chip.live {
+  border-color: rgba(0, 255, 119, 0.3);
+  background: rgba(0, 255, 119, 0.05);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--c-green);
+  box-shadow: 0 0 6px var(--c-green);
+  animation: pulse-dot 1.5s infinite alternate;
+}
+
+@keyframes pulse-dot {
+  0% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+/* 2. MAIN TACTICAL GRID */
+.c2-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 280px 1fr 310px;
+  gap: 10px;
+  padding: 10px;
+  overflow: hidden;
+  height: calc(100vh - 72px);
+  transition: all 0.25s ease;
+}
+
+/* THEATER MODE (FULL EXPANSION) */
+.c2-grid.theater-mode {
+  grid-template-columns: 1fr !important;
+}
+
+.c2-grid.theater-mode .panel-left,
+.c2-grid.theater-mode .panel-right {
+  display: none !important;
+}
+
+.c2-grid.theater-mode .panel-center {
+  grid-column: 1 / -1 !important;
+  width: 100%;
+  height: 100%;
+}
+
+/* PANELS */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.panel-header {
+  height: 36px;
+  background: var(--bg-panel-header);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--text-main);
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.header-stream-tools {
+  display: flex;
+  align-items: center;
+}
+
+.btn-mini {
+  background: rgba(0, 240, 255, 0.1);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  color: var(--c-cyan);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+/* SENSOR TOOLBAR */
+.sensor-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #080c09;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  overflow-x: auto;
+}
+
+.btn-sensor {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 5px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-sensor:hover {
+  border-color: var(--c-cyan);
+  color: #fff;
+  background: rgba(0, 240, 255, 0.08);
+}
+
+.btn-sensor.active {
+  border-color: var(--c-cyan);
+  color: var(--c-cyan);
+  background: rgba(0, 240, 255, 0.15);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
+}
+
+.btn-sensor.godseye-btn {
+  border-color: rgba(0, 240, 255, 0.7);
+  color: var(--c-cyan);
+  background: rgba(0, 240, 255, 0.08);
+}
+
+.btn-sensor.godseye-btn.active {
+  border-color: var(--c-cyan);
+  color: #030807;
+  background: var(--c-cyan);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.7);
+  font-weight: 800;
+}
+
+.btn-sensor.reset-btn {
+  margin-left: auto;
+  border-color: rgba(245, 158, 11, 0.4);
+  color: var(--c-amber);
+}
+
+/* DOMINANT VIDEO WRAPPER */
+.video-wrapper {
+  position: relative;
+  flex: 1;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  min-height: 380px;
+}
+
+.video-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.incursion-alert-banner {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--c-red);
+  color: #ffffff;
+  padding: 5px 14px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 1px;
+  box-shadow: 0 0 15px rgba(255, 42, 75, 0.8);
+  animation: flash-banner 0.4s infinite alternate;
+  display: none;
+  z-index: 10;
+}
+
+.handoff-alert-banner {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 16, 22, 0.92);
+  border: 1px solid var(--c-cyan);
+  color: var(--c-cyan);
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 1px;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+  animation: pulse-cyan 0.8s infinite alternate;
+  display: none;
+  z-index: 12;
+}
+
+@keyframes pulse-cyan {
+  from { border-color: rgba(0, 240, 255, 0.4); box-shadow: 0 0 8px rgba(0, 240, 255, 0.3); }
+  to { border-color: #00f0ff; box-shadow: 0 0 20px rgba(0, 240, 255, 0.8); }
+}
+
+@keyframes flash-banner {
+  from { opacity: 0.85; }
+  to { opacity: 1; filter: brightness(1.2); }
+}
+
+/* ACTION DECK */
+.control-bar {
+  height: 44px;
+  background: var(--bg-panel-header);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  overflow-x: auto;
+}
+
+.btn-tactical {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 5px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-tactical:hover {
+  background: rgba(0, 240, 255, 0.1);
+  border-color: var(--c-cyan);
+  color: #ffffff;
+}
+
+.btn-tactical.highlight-btn {
+  border-color: rgba(0, 240, 255, 0.7);
+  color: var(--c-cyan);
+  font-weight: 700;
+  background: rgba(0, 240, 255, 0.1);
+}
+
+.btn-tactical.highlight-btn:hover {
+  background: rgba(0, 240, 255, 0.25);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+}
+
+.btn-tactical.alert-btn {
+  border-color: rgba(255, 42, 75, 0.4);
+  color: #ffa5b5;
+}
+
+/* MAP STYLING */
+#tactical-map {
+  height: 200px;
+  width: 100%;
+  border-bottom: 1px solid var(--border-subtle);
+  background: #050807;
+}
+
+/* SECTOR LIST */
+.sector-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sector-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sector-card:hover {
+  background: rgba(0, 240, 255, 0.04);
+  border-color: rgba(0, 240, 255, 0.4);
+}
+
+.sector-card.active {
+  border-color: var(--c-cyan);
+  background: rgba(0, 240, 255, 0.08);
+  box-shadow: inset 2px 0 0 var(--c-cyan);
+}
+
+.sector-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.sector-name {
+  font-size: 10px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.sector-meta {
+  font-size: 9px;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+/* STSI RISK METRIC BARS */
+.stsi-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stsi-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.stsi-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+}
+
+.stsi-track {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.stsi-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+/* ENROLLED BIOMETRICS PILLS */
+.enrolled-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.face-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  color: var(--c-cyan);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 3px;
+}
+
+/* EVIDENCE FEED */
+.evidence-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.evidence-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  padding: 6px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  transition: border-color 0.2s ease;
+}
+
+.evidence-card:hover {
+  border-color: var(--c-cyan);
+}
+
+.evidence-thumb {
+  width: 56px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.evidence-details {
+  flex: 1;
+  font-size: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.evidence-id {
+  font-weight: 700;
+  color: var(--c-cyan);
+}
+
+.evidence-hash {
+  color: var(--text-dim);
+  font-size: 8px;
+  font-family: monospace;
+}
+
+.btn-cert {
+  display: inline-block;
+  color: var(--c-cyan);
+  text-decoration: none;
+  font-size: 8px;
+  font-weight: 700;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  padding: 2px 5px;
+  border-radius: 2px;
+  margin-top: 2px;
+  align-self: flex-start;
+}
+
+/* MODAL OVERLAYS */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-card {
+  width: 480px;
+  max-width: 90vw;
+  background: #090e0c;
+  border: 1px solid var(--c-cyan);
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.25);
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  height: 38px;
+  background: rgba(14, 25, 20, 0.95);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--c-cyan);
+  letter-spacing: 0.8px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 14px;
+}
+
+.modal-input {
+  width: 100%;
+  margin-top: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  padding: 8px 10px;
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  outline: none;
+}
+
+.modal-input:focus {
+  border-color: var(--c-cyan);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+}
+
+.quick-presets {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.btn-preset {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  font-size: 9px;
+  padding: 3px 6px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.btn-preset:hover {
+  border-color: var(--c-cyan);
+  color: var(--c-cyan);
+}
+
+.modal-footer {
+  height: 42px;
+  background: rgba(14, 25, 20, 0.95);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 12px;
+  gap: 8px;
+}
+
+/* ===================================================================
+   ANPR STYLES // TACTICAL LICENSE PLATE & VEHICLE CARDS
+   =================================================================== */
+.anpr-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.anpr-card {
+  background: rgba(10, 18, 14, 0.85);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: all 0.2s ease;
+}
+
+.anpr-card.threat {
+  border-color: var(--c-red);
+  background: rgba(40, 10, 15, 0.85);
+  box-shadow: 0 0 10px rgba(255, 42, 75, 0.3);
+}
+
+.anpr-card.authorized {
+  border-color: var(--c-green);
+  background: rgba(10, 30, 20, 0.85);
+}
+
+.anpr-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.anpr-plate-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  padding: 1px 5px;
+  border-radius: 2px;
+  background: #000;
+  border: 1px solid var(--c-cyan);
+  color: #fff;
+}
+
+.anpr-card.threat .anpr-plate-badge {
+  border-color: var(--c-red);
+  color: var(--c-red);
+}
+
+.anpr-card.authorized .anpr-plate-badge {
+  border-color: var(--c-green);
+  color: var(--c-green);
+}
+
+.anpr-status-pill {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.anpr-card-sub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
+#watchlist-rows tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+#watchlist-rows tr:hover {
+  background: rgba(0, 240, 255, 0.05);
+}
+
+#watchlist-rows td {
+  padding: 5px 8px;
+}
+
+/* ===================================================================
+   3D DIGITAL TWIN & ORBITAL SATELLITE RECON STYLES
+   =================================================================== */
+.btn-mini.active {
+  background: rgba(0, 240, 255, 0.25);
+  border-color: var(--c-cyan);
+  color: #fff;
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
+}
+
+.globe-hud-overlay {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.globe-hud-card {
+  pointer-events: auto;
+  background: rgba(8, 14, 18, 0.88);
+  border: 1px solid var(--c-cyan);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
+  border-radius: 4px;
+  padding: 10px 14px;
+  width: 320px;
+  backdrop-filter: blur(8px);
+}
+
+.satellites-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sat-feed-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sat-feed-item:hover {
+  background: rgba(0, 240, 255, 0.08);
+  border-color: var(--c-cyan);
+}
+
+.sat-feed-name {
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.sat-feed-meta {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.sat-badge-swath {
+  font-size: 8px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.sat-card-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  background: rgba(12, 18, 22, 0.9);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+}
+
+.sat-card-modal.active-lock {
+  border-color: var(--c-cyan);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+}
+
+.cesium-widget-credits,
+.cesium-widget-errorPanel,
+.cesium-credit-modal,
+.cesium-credit-logoContainer,
+.cesium-credit-textContainer,
+.cesium-viewer-errorPanel {
+  display: none !important;
+}
+
+/* ===================================================================
+   REID CROSS-CAMERA & SENTRY MATRIX STYLING
+   =================================================================== */
+.btn-head-action.active-matrix,
+.btn-tactical.active-matrix {
+  background: rgba(0, 240, 255, 0.25) !important;
+  border-color: var(--c-cyan) !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.4) !important;
+}
+
+.reid-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.reid-feed-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 8px;
+  background: rgba(10, 18, 14, 0.6);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.reid-feed-item:hover {
+  background: rgba(15, 28, 22, 0.9);
+  border-color: var(--c-cyan);
+}
+
+.reid-feed-item.in-transit {
+  border-color: var(--c-amber);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.reid-feed-title {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--c-cyan);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.reid-feed-meta {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.reid-badge {
+  font-size: 8px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-weight: 700;
+  border: 1px solid var(--border-subtle);
+}
+
+.reid-badge.transit {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: var(--c-amber);
+  color: var(--c-amber);
+}
+
+.reid-badge.face {
+  background: rgba(0, 255, 119, 0.15);
+  border-color: var(--c-green);
+  color: var(--c-green);
+}
+
+.reid-card-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: rgba(12, 20, 16, 0.9);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+}
+
+.reid-card-modal.in-transit {
+  border-color: var(--c-amber);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.25);
+}
+
+.transit-event-card {
+  padding: 7px 9px;
+  background: rgba(20, 14, 10, 0.85);
+  border-left: 3px solid var(--c-amber);
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+/* ===================================================================
+   TURRET GIMBAL & HARDWARE ACTUATION DECK
+   =================================================================== */
+.gimbal-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
+  background: rgba(10, 18, 14, 0.9);
+  border-top: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  gap: 8px;
+}
+
+.gimbal-status-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gimbal-badge {
+  font-size: 8px;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 1px solid var(--border-subtle);
+  background: rgba(0,0,0,0.4);
+}
+
+.gimbal-badge.active {
+  background: rgba(0, 255, 119, 0.15);
+  border-color: var(--c-green);
+  color: var(--c-green);
+}
+
+.gimbal-badge.ircut {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: var(--c-cyan);
+  color: var(--c-cyan);
+}
+
+.gimbal-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+/* Global Camera Directory Cards */
+.global-cam-card {
+  background: rgba(10, 16, 22, 0.85);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.global-cam-card:hover {
+  border-color: var(--c-cyan);
+  background: rgba(12, 22, 30, 0.95);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
+}
+
+.global-cam-card.active-stream {
+  border-color: var(--c-green);
+  box-shadow: 0 0 10px rgba(0, 255, 119, 0.2);
+}
+
+.cam-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.cam-card-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.cam-card-badge {
+  font-size: 8px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(0, 240, 255, 0.1);
+  color: var(--c-cyan);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  white-space: nowrap;
+}
+
+.cam-card-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.cam-card-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 6px;
+  margin-top: 2px;
+}
+
+.filter-pills .filter-pill {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-pills .filter-pill:hover,
+.filter-pills .filter-pill.active {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: var(--c-cyan);
+  color: var(--c-cyan);
+}
+
+.alert-btn {
+  background: rgba(255, 51, 68, 0.2) !important;
+  border-color: var(--c-red) !important;
+  color: var(--c-red) !important;
+  animation: pulse-red-border 2s infinite ease-in-out;
+}
+
+.alert-btn:hover {
+  background: var(--c-red) !important;
+  color: #fff !important;
+}
+
+@keyframes pulse-red-border {
+  0% { box-shadow: 0 0 4px rgba(255, 51, 68, 0.2); }
+  50% { box-shadow: 0 0 14px rgba(255, 51, 68, 0.6); }
+  100% { box-shadow: 0 0 4px rgba(255, 51, 68, 0.2); }
+}
+
+
+

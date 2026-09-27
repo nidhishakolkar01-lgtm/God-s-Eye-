@@ -1,0 +1,59 @@
+{
+    "r1_sectors": {
+        "1": {
+            "name": "SECTOR-01 // PUNJAB PERIMETER WALL",
+            "mode": "NORMAL",
+            "snapshot_bytes": 45175,
+            "tracked": 1
+        },
+        "2": {
+            "name": "SECTOR-02 // THAR NIGHT SENTRY",
+            "mode": "FLIR_IRONBOW",
+            "snapshot_bytes": 34355,
+            "tracked": 1
+        },
+        "3": {
+            "name": "SECTOR-03 // HIGHWAY ANPR CORRIDOR",
+            "mode": "NORMAL",
+            "snapshot_bytes": 177325,
+            "tracked": 11
+        },
+        "4": {
+            "name": "SECTOR-04 // CHECKPOST SENTINEL",
+            "mode": "NVG_P43",
+            "snapshot_bytes": 117151,
+            "tracked": 11
+        }
+    },
+    "r2_telemetry": {
+        "MGRS Tactical Grid": "43S ES 8660 2092",
+        "Latitude / Longitude": "32.726, 74.857",
+        "STSI Composite Threat Index": 68,
+        "GSD Spatial Resolution": "3.48 cm/px",
+        "NIIRS Optical Rating": "NIIRS-9",
+        "Sun Azimuth": "246.0 deg",
+        "ANPR Scans & Watchlist": "0 scans / 8 watchlisted",
+        "Enrolled Faces": 3
+    },
+    "r3_hardware": {
+        "turret_status": "TRACKING TARGET LOCK",
+        "pan": 113.7,
+        "tilt": 89.2,
+        "ircut": "OPTICAL_IR_BLOCK [DAYLIGHT]",
+        "ultrasonic_cm": 284.0,
+        "interdiction_order": "QRT-20260910-98F7AF23"
+    },
+    "r4_r5_benchmarks": {
+        "concurrent_clients": 20,
+        "duration_sec": 18,
+        "frames_delivered": 4399,
+        "requests_served": 2687,
+        "avg_fps": 30.4,
+        "p95_fps": 48.7,
+        "p50_latency_ms": 23.26,
+        "avg_latency_ms": 24.06,
+        "p95_latency_ms": 44.24,
+        "p99_latency_ms": 54.43,
+        "drop_rate": "0.00%"
+    }
+}

@@ -1,0 +1,53 @@
+# ======================================================================
+# PROJECT TRINETRA-C2 // GIT IGNORE CONFIGURATION
+# SIH 2026 Problem Statement 26187 (MHA)
+# ======================================================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environments
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Agent and temporary development files
+.agents/
+scratch/
+runs/
+*.log
+
+# Large model weights (>100MB exceeds GitHub hard limit)
+weights/
+*.pt.large
+
+# Large training datasets (not needed for inference)
+dataset_omni/
+
+# OS and Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Runtime intrusion evidence snapshots (preserve directory structure via .gitkeep)
+evidence/*
+!evidence/.gitkeep
+
+# Transient debug and test image dumps in root
+/*.jpg
+/*.png
+/*.webp
+!known_faces/**
+!static/**
+
+# Local alert configuration with credentials
+alert_config.json
