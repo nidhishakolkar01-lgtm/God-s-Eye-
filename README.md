@@ -21,7 +21,7 @@ TRINETRA-C2 is fully containerized and pre-configured for 1-click cloud deployme
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/nidhishakolkar01-lgtm/God-s-Eye-)
 
 👉 **[Launch 1-Click Cloud Instance](https://render.com/deploy?repo=https://github.com/nidhishakolkar01-lgtm/God-s-Eye-)**
-* **Target Public Cloud URL:** `https://trinetra-c2-border-sentry.onrender.com`
+* **Target Public Cloud URL:** `https://trinetra-c2-border-sentry-re8u.onrender.com`
 * **Immediate Live Public Demo Tunnel:** [https://polite-poets-tan.loca.lt](https://polite-poets-tan.loca.lt) *(Tunnel Password: `49.36.59.11`)*
 * Render auto-detects `render.yaml` from this repository and provisions the Dockerized C2 sentry stack with free SSL/HTTPS.
 

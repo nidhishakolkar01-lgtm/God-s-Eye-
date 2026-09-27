@@ -35,7 +35,7 @@ Deploy directly from this repository using the pre-configured `render.yaml` blue
 4. Click **"Apply"** / **"Create New Web Service"**.
 5. Render builds the Docker image and serves your live tactical C2 sentry dashboard at:
    ```
-   https://trinetra-c2-border-sentry.onrender.com
+   https://trinetra-c2-border-sentry-re8u.onrender.com
    ```
 6. **Submit this permanent HTTPS link to the SIH portal!**
 
