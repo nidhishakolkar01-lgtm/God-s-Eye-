@@ -21,27 +21,26 @@ TRINETRA-C2 is fully containerized using **Docker** and pre-configured for **1-c
 
 ## 🌐 Option 1: 1-Click Deploy on Render.com (Recommended for SIH)
 
-Render allows you to deploy directly from your GitHub repository using the included `render.yaml` blueprint.
+Deploy directly from this repository using the pre-configured `render.yaml` blueprint with zero setup:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/nidhishakolkar01-lgtm/God-s-Eye-)
+
+### 1-Click Deploy URL:
+👉 **[https://render.com/deploy?repo=https://github.com/nidhishakolkar01-lgtm/God-s-Eye-](https://render.com/deploy?repo=https://github.com/nidhishakolkar01-lgtm/God-s-Eye-)**
 
 ### Steps:
-1. Push this project to your GitHub repository:
-   ```bash
-   git init
-   git add .
-   git commit -m "feat: Project TRINETRA-C2 Cloud Deployment"
-   git remote add origin https://github.com/your-username/trinetra-c2.git
-   git push -u origin main
-   ```
-2. Go to **[Render.com](https://render.com/)** and sign in.
-3. Click **New +** &rarr; **Blueprint**.
-4. Connect your `trinetra-c2` GitHub repository.
-5. Render will automatically read `render.yaml`, build the Docker container, and provide you with a permanent HTTPS link:
+1. Click the **Deploy to Render** button above or open the 1-click URL.
+2. Sign in to your Render account (with GitHub).
+3. Render automatically detects `render.yaml` from `main` branch.
+4. Click **"Apply"** / **"Create New Web Service"**.
+5. Render builds the Docker image and serves your live tactical C2 sentry dashboard at:
    ```
    https://trinetra-c2-border-sentry.onrender.com
    ```
-6. **Submit this permanent URL to the SIH portal!**
+6. **Submit this permanent HTTPS link to the SIH portal!**
 
----
+> **Note on Manual Re-deploy:**  
+> If you already connected the service, go to your Render Dashboard ➔ select `trinetra-c2-border-sentry` ➔ click **"Manual Deploy"** ➔ **"Deploy latest commit"**. Docker build layer caching will finish deployment in ~20 seconds.
 
 ## 🚂 Option 2: 1-Click Deploy on Railway.app
 
