@@ -57,12 +57,12 @@ class ExclusionPolygonZone:
                 (int(frame_w * 0.98), int(frame_h * 0.98))
             ]
         elif sector_id == 2:
-            # Sector 2: Night RVSS / Thermal Barrier Infiltration
+            # Sector 2: Tactical Outpost Perimeter Cordon
             self.points = [
-                (int(frame_w * 0.05), int(frame_h * 0.95)),
-                (int(frame_w * 0.20), int(frame_h * 0.25)),
-                (int(frame_w * 0.80), int(frame_h * 0.45)),
-                (int(frame_w * 0.95), int(frame_h * 0.95))
+                (int(frame_w * 0.08), int(frame_h * 0.65)),
+                (int(frame_w * 0.25), int(frame_h * 0.28)),
+                (int(frame_w * 0.78), int(frame_h * 0.28)),
+                (int(frame_w * 0.92), int(frame_h * 0.65))
             ]
         elif sector_id == 3:
             # Sector 3: Forward Security Checkpost / Barricade Transit Line
@@ -71,6 +71,14 @@ class ExclusionPolygonZone:
                 (int(frame_w * 0.40), int(frame_h * 0.45)),
                 (int(frame_w * 0.78), int(frame_h * 0.45)),
                 (int(frame_w * 0.92), int(frame_h * 0.90))
+            ]
+        elif sector_id == 4:
+            # Sector 4: Forward Transit Checkpoint & Barricade Corridor
+            self.points = [
+                (int(frame_w * 0.10), int(frame_h * 0.85)),
+                (int(frame_w * 0.35), int(frame_h * 0.45)),
+                (int(frame_w * 0.75), int(frame_h * 0.45)),
+                (int(frame_w * 0.92), int(frame_h * 0.85))
             ]
         elif sector_id == 5:
             # Sector 5: Omniscient Intersection & Road Grid
