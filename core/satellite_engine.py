@@ -5,8 +5,13 @@ import json
 import datetime
 import threading
 import urllib.request
-from typing import Dict, List, Tuple, Optional
-from sgp4.api import Satrec, jday
+from typing import Dict, List, Tuple, Optional, Any
+try:
+    from sgp4.api import Satrec, jday
+    SGP4_AVAILABLE = True
+except ImportError:
+    Satrec, jday = None, None
+    SGP4_AVAILABLE = False
 
 class SatelliteOrbitalEngine:
     """
@@ -120,6 +125,8 @@ class SatelliteOrbitalEngine:
     def _build_satrec_objects(self):
         """Builds Satrec instances for fast mathematical orbital propagation."""
         self.satrec_objects.clear()
+        if not SGP4_AVAILABLE or Satrec is None:
+            return
         for key, (line1, line2) in self.tles.items():
             try:
                 sat = Satrec.twoline2rv(line1, line2)
@@ -208,6 +215,9 @@ class SatelliteOrbitalEngine:
         Computes real-time positions, velocities, sensor footprints, and ground tracks
         for all reconnaissance satellites in the constellation.
         """
+        if not SGP4_AVAILABLE or jday is None:
+            return []
+
         if current_utc is None:
             current_utc = datetime.datetime.now(datetime.timezone.utc)
 

@@ -20,3 +20,5 @@ python-dateutil>=2.8.2
 psutil>=5.9.0
 easyocr>=1.7.0
 yt-dlp>=2024.0.0
+sgp4>=2.20
+pyserial>=3.5

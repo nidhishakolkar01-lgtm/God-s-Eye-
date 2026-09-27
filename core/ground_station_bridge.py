@@ -5,10 +5,16 @@ Dispatches Real-Time Closed-Loop PID Visual Servoing Setpoints to the 2.4GHz RF 
 """
 
 import time
-import serial
-import serial.tools.list_ports
 import threading
 from typing import Optional, Dict, Any, Tuple
+
+try:
+    import serial
+    import serial.tools.list_ports
+    SERIAL_AVAILABLE = True
+except ImportError:
+    serial = None
+    SERIAL_AVAILABLE = False
 
 
 class GroundStationRFBridge:
@@ -39,6 +45,8 @@ class GroundStationRFBridge:
 
     def _auto_connect(self):
         """Auto-discovers Arduino Nano CH340 / FTDI / CP2102 COM Port."""
+        if not SERIAL_AVAILABLE or serial is None:
+            return
         if self.port_name:
             ports = [self.port_name]
         else:
