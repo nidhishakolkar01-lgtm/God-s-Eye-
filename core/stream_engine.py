@@ -121,20 +121,34 @@ class VideoStreamEngine:
                 # Video file playback
                 ret, frame = self.cap.read()
                 if not ret or frame is None:
-                    if self.loop and self.total_frames > 0:
+                    if self.loop:
                         self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                        ret, frame = self.cap.read()
+                        if not ret or frame is None:
+                            try:
+                                self.cap.release()
+                                self.cap = cv2.VideoCapture(self.source)
+                                ret, frame = self.cap.read()
+                            except Exception:
+                                pass
+                        if not ret or frame is None:
+                            time.sleep(0.02)
+                            continue
                         self.frame_idx = 0
-                        time.sleep(0.01)
-                        continue
                     else:
                         break
+
+                # Standardize resolution to 854x480 (16:9 widescreen) for smooth 30 FPS playback
+                fh, fw = frame.shape[:2]
+                if fw != 854 or fh != 480:
+                    frame = cv2.resize(frame, (854, 480), interpolation=cv2.INTER_LINEAR)
 
                 with self.lock:
                     self.current_frame = frame
                     self.frame_idx += 1
                 self.new_frame_event.set()
 
-                # For video files, throttle to natural playback speed
+                # For video files, throttle to natural playback speed (max 30 FPS)
                 elapsed = time.perf_counter() - t_start
                 sleep_time = frame_interval - elapsed
                 if sleep_time > 0.001:

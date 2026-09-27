@@ -88,6 +88,7 @@ class ANPREngine:
         self.ocr_reader = None
         self.crnn_reader = None
         self.ocr_initialized = False
+        self.ocr_lock = threading.Lock()
 
         self.clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
 
@@ -111,30 +112,31 @@ class ANPREngine:
             print(f"[ANPR-ENGINE] Error saving watchlist: {e}")
 
     def _init_ocr(self):
-        if self.ocr_initialized:
-            return
-        # Priority 1: High-speed, ultra-lightweight OpenCV DNN ONNX CRNN (<25MB RAM)
-        candidate_paths = [
-            os.path.join(os.path.dirname(__file__), "..", "models", "text_recognition_CRNN_EN_2021sep.onnx"),
-            os.path.abspath("models/text_recognition_CRNN_EN_2021sep.onnx"),
-            "models/text_recognition_CRNN_EN_2021sep.onnx"
-        ]
-        crnn_model_path = None
-        for p in candidate_paths:
-            if os.path.exists(p):
-                crnn_model_path = p
-                break
-
-        if crnn_model_path:
-            try:
-                from core.crnn_helper import CRNN
-                print(f"[ANPR-ENGINE] Initializing OpenCV ONNX CRNN Recognizer ({crnn_model_path})...")
-                self.crnn_reader = CRNN(crnn_model_path)
-                self.ocr_initialized = True
-                print("[ANPR-ENGINE] OpenCV ONNX CRNN Engine loaded successfully (Memory footprint < 25MB).")
+        with self.ocr_lock:
+            if self.ocr_initialized:
                 return
-            except Exception as e:
-                print(f"[ANPR-ENGINE] OpenCV ONNX CRNN init failed: {e}")
+            # Priority 1: High-speed, ultra-lightweight OpenCV DNN ONNX CRNN (<25MB RAM)
+            candidate_paths = [
+                os.path.join(os.path.dirname(__file__), "..", "models", "text_recognition_CRNN_EN_2021sep.onnx"),
+                os.path.abspath("models/text_recognition_CRNN_EN_2021sep.onnx"),
+                "models/text_recognition_CRNN_EN_2021sep.onnx"
+            ]
+            crnn_model_path = None
+            for p in candidate_paths:
+                if os.path.exists(p):
+                    crnn_model_path = p
+                    break
+
+            if crnn_model_path:
+                try:
+                    from core.crnn_helper import CRNN
+                    print(f"[ANPR-ENGINE] Initializing OpenCV ONNX CRNN Recognizer ({crnn_model_path})...")
+                    self.crnn_reader = CRNN(crnn_model_path)
+                    self.ocr_initialized = True
+                    print("[ANPR-ENGINE] OpenCV ONNX CRNN Engine loaded successfully (Memory footprint < 25MB).")
+                    return
+                except Exception as e:
+                    print(f"[ANPR-ENGINE] OpenCV ONNX CRNN init failed: {e}")
 
         # Priority 2: Optional fallback to PyTorch EasyOCR only if explicitly enabled
         if os.environ.get("ENABLE_EASYOCR", "0") == "1":
@@ -393,15 +395,16 @@ class ANPREngine:
                     [sw - 1, sh - 1]
                 ], dtype=np.float32)
 
-                text_out = self.crnn_reader.infer(scaled, rbbox)
-                if not text_out or len(text_out) < 4:
-                    gray = cv2.cvtColor(scaled, cv2.COLOR_BGR2GRAY)
-                    denoised = cv2.bilateralFilter(gray, 5, 50, 50)
-                    boosted = self.clahe.apply(denoised)
-                    boosted_bgr = cv2.cvtColor(boosted, cv2.COLOR_GRAY2BGR)
-                    text_out2 = self.crnn_reader.infer(boosted_bgr, rbbox)
-                    if text_out2 and len(text_out2) > len(text_out or ''):
-                        text_out = text_out2
+                with self.ocr_lock:
+                    text_out = self.crnn_reader.infer(scaled, rbbox)
+                    if not text_out or len(text_out) < 4:
+                        gray = cv2.cvtColor(scaled, cv2.COLOR_BGR2GRAY)
+                        denoised = cv2.bilateralFilter(gray, 5, 50, 50)
+                        boosted = self.clahe.apply(denoised)
+                        boosted_bgr = cv2.cvtColor(boosted, cv2.COLOR_GRAY2BGR)
+                        text_out2 = self.crnn_reader.infer(boosted_bgr, rbbox)
+                        if text_out2 and len(text_out2) > len(text_out or ''):
+                            text_out = text_out2
 
                 raw_text = (text_out or '').strip().upper()
                 ocr_conf = 0.85 if len(raw_text) >= 6 else 0.60

@@ -57,7 +57,7 @@ SECTORS = {
         "lat": 31.604,
         "lng": 74.572,
         "mgrs": GeoTelemetry.latlon_to_mgrs(31.604, 74.572),
-        "source": "sample_footage/previews4/border_wall_1.mp4",
+        "source": "sample_footage/border_fence_ladder.mp4",
         "type": "ELEVATED MAST CCTV // OPTICAL",
         "stsi_base": 78,
         "status": "ELEVATED THREAT",
@@ -71,7 +71,7 @@ SECTORS = {
         "lat": 27.023,
         "lng": 70.912,
         "mgrs": GeoTelemetry.latlon_to_mgrs(27.023, 70.912),
-        "source": "sample_footage/previews2/night_vision_1.mp4",
+        "source": "sample_footage/previews_godseye/flir1.mp4",
         "type": "THERMAL RVSS // FORWARD FLIR",
         "stsi_base": 64,
         "status": "STERILE CORRIDOR WATCH",
@@ -81,13 +81,13 @@ SECTORS = {
         "id": 3,
         "name": "SECTOR-03 // HIGHWAY ANPR CORRIDOR",
         "codename": "TRINETRA-HIGHWAY-ANPR-03",
-        "location": "Strategic Highway Transit Corridor",
+        "location": "Strategic Highway Transit Corridor NH-44",
         "lat": 32.610,
         "lng": 74.720,
         "mgrs": GeoTelemetry.latlon_to_mgrs(32.610, 74.720),
-        "source": "sample_footage/sih_candidate_vids/parth_test.mp4",
+        "source": "sample_footage/previews2/checkpoint_1.mp4",
         "type": "HIGHWAY HIGH-SPEED ANPR / SENTRY",
-        "stsi_base": 55,
+        "stsi_base": 82,
         "status": "ANPR INTERDICTION",
         "preset": 3
     },
@@ -99,7 +99,7 @@ SECTORS = {
         "lat": 32.726,
         "lng": 74.857,
         "mgrs": GeoTelemetry.latlon_to_mgrs(32.726, 74.857),
-        "source": "sample_footage/previews2/checkpoint_1.mp4",
+        "source": "sample_footage/previews3/border_sec.mp4",
         "type": "CHECKPOST TACTICAL SENTINEL // ANPR",
         "stsi_base": 68,
         "status": "ACTIVE INSPECTION",
@@ -113,7 +113,7 @@ SECTORS = {
         "lat": 31.608,
         "lng": 74.578,
         "mgrs": GeoTelemetry.latlon_to_mgrs(31.608, 74.578),
-        "source": "rtsp://192.168.1.1:7070/webcam",
+        "source": "sample_footage/previews_godseye/drone_track1.mp4",
         "type": "AIRBORNE RECON SENTRY // FPV",
         "stsi_base": 82,
         "status": "AIRBORNE PATROL ACTIVE",
@@ -174,11 +174,12 @@ class C2State:
             self.camera_mgr.activate_camera(sector_id)
             self.stream = self.camera_mgr.streams.get(sector_id)
             info = SECTORS.get(sector_id, SECTORS[1])
-            time.sleep(0.2)
             ret, frame = self.stream.read() if self.stream else (False, None)
             if ret and frame is not None:
                 h, w = frame.shape[:2]
                 self.zone.set_preset_corridor(w, h, sector_id=sector_id)
+            else:
+                self.zone.set_preset_corridor(854, 480, sector_id=sector_id)
             self.detector.reset_tracker()
             print(f"[C2-CORE] Initialized Sector {sector_id}: {info['name']} (MGRS: {info['mgrs']})")
 
@@ -344,16 +345,16 @@ class C2State:
                     self.tracked_count = len(dets)
                     self.active_breaches = breaches
 
-                time.sleep(0.005)
+                time.sleep(0.075)
             except Exception as e:
                 print(f"[C2-INFERENCE ERROR] {e}")
-                time.sleep(0.02)
+                time.sleep(0.05)
 
     def run_pipeline(self):
         """High-Performance 32 FPS Smooth Rolling Visual Render & Streaming Pipeline."""
         fps_start = time.time()
         fps_frames = 0
-        target_dt = 1.0 / 32.0  # Rock-solid 32.0 FPS cadence
+        target_dt = 1.0 / 30.0  # Rock-solid 30.0 FPS cadence
         while self.running:
             loop_t0 = time.perf_counter()
             try:
@@ -365,6 +366,11 @@ class C2State:
                 if not ret or frame is None:
                     time.sleep(0.01)
                     continue
+
+                # Standardize frame to 854x480 for fast rendering and low latency
+                fh, fw = frame.shape[:2]
+                if fw != 854 or fh != 480:
+                    frame = cv2.resize(frame, (854, 480), interpolation=cv2.INTER_LINEAR)
 
                 with self.inference_lock:
                     self.latest_raw_frame = frame
@@ -412,7 +418,7 @@ class C2State:
                         is_godeye_mode=False
                     )
 
-                _, buf = cv2.imencode(".jpg", hud_frame, [cv2.IMWRITE_JPEG_QUALITY, 72])
+                _, buf = cv2.imencode(".jpg", hud_frame, [cv2.IMWRITE_JPEG_QUALITY, 68])
                 self.latest_encoded_frame = buf.tobytes()
 
                 fps_frames += 1
@@ -544,9 +550,9 @@ async def stream_video():
             if frame_bytes and frame_bytes is not last_sent_bytes:
                 last_sent_bytes = frame_bytes
                 yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
-                await asyncio.sleep(0.015)
+                await asyncio.sleep(0.033)
             else:
-                await asyncio.sleep(0.005)
+                await asyncio.sleep(0.008)
     return StreamingResponse(frame_generator(), media_type="multipart/x-mixed-replace; boundary=frame")
 
 @app.get("/api/snapshot")

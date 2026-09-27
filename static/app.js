@@ -391,6 +391,7 @@ function initControls() {
         if (e.key === '2') switchSector(2);
         if (e.key === '3') switchSector(3);
         if (e.key === '4') switchSector(4);
+        if (e.key === '5') switchSector(5);
         if (e.key === '0') connectWebcam(0);
         if (e.key.toLowerCase() === 't') toggleTheaterMode();
         if (e.key.toLowerCase() === 'h') toggleHudBoxes();
