@@ -57,7 +57,8 @@ class TacticalHUDRenderer:
 
     def draw_hud(self, frame, detections, active_breaches, fps, latency_ms, clahe_on, sensor_mode="NORMAL",
                  mgrs="43R FN 2891 7412", gsd_text="GSD: 7.8cm | NIIRS-7", muted=False,
-                 sector_label="SECTOR-01 // BORDER FENCE", is_godeye_mode=False):
+                 sector_label="SECTOR-01 // BORDER FENCE", is_godeye_mode=False,
+                 satellite_info=None, sec65b_hash=None, **kwargs):
         """Assembles and composites the full tactical defense HUD."""
         h, w = frame.shape[:2]
         self.update_flash()

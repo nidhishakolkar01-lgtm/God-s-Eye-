@@ -5,6 +5,7 @@ import time
 import base64
 import hashlib
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 
 class CryptographicEvidenceLogger:
     """
@@ -18,6 +19,7 @@ class CryptographicEvidenceLogger:
         self.ledger_file = os.path.join(self.output_dir, "sec65b_evidence_ledger.json")
         self.last_log_time = 0
         self.log_cooldown = 2.0
+        self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="Sec65B_IO")
 
     def compute_sha256(self, file_path):
         """Computes cryptographic SHA-256 hash of a file."""
@@ -45,11 +47,10 @@ class CryptographicEvidenceLogger:
         img_filename = f"INCIDENT_{timestamp_str}_ID{tid}_{cls_name}.jpg"
         img_path = os.path.join(self.output_dir, img_filename)
 
-        # Save image snapshot
-        cv2.imwrite(img_path, frame)
-
-        # Calculate cryptographic SHA-256 hash
-        sha256_hash = self.compute_sha256(img_path)
+        # Encode image snapshot to memory buffer & calculate cryptographic SHA-256 hash (sub-1ms, zero disk blocking)
+        ret, enc = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        img_bytes = enc.tobytes() if ret else b""
+        sha256_hash = hashlib.sha256(img_bytes).hexdigest()
 
         sec_name = sector_info.get("name", "SECTOR-01 // PUNJAB PERIMETER WALL") if sector_info else "SECTOR-01"
         mgrs = sector_info.get("mgrs", "43R FN 2891 7412") if sector_info else "43R FN 2891 7412"
@@ -82,33 +83,41 @@ class CryptographicEvidenceLogger:
             }
         }
 
-        # Append to master ledger (capped at last 150 entries to prevent runaway file size and disk saturation)
-        ledger = []
-        if os.path.exists(self.ledger_file):
-            try:
-                with open(self.ledger_file, "r", encoding="utf-8") as f:
-                    ledger = json.load(f)
-            except Exception:
-                ledger = []
-
-        ledger.append(dossier_entry)
-        if len(ledger) > 150:
-            # Clean up old pruned images from disk
-            old_entries = ledger[:-150]
-            ledger = ledger[-150:]
-            for old in old_entries:
-                try:
-                    old_img = os.path.join(self.output_dir, old.get("forensic_integrity", {}).get("image_file", ""))
-                    if os.path.exists(old_img):
-                        os.remove(old_img)
-                except Exception:
-                    pass
-
-        with open(self.ledger_file, "w", encoding="utf-8") as f:
-            json.dump(ledger, f, indent=2)
-
-        print(f"[SEC-65B EVIDENCE COMMITTED] {img_filename} | SHA256: {sha256_hash[:16]}...")
+        # Asynchronously commit image and ledger to disk without blocking the perception pipeline
+        self.executor.submit(self._persist_incident, img_path, img_bytes, dossier_entry, img_filename, sha256_hash)
         return dossier_entry
+
+    def _persist_incident(self, img_path, img_bytes, dossier_entry, img_filename, sha256_hash):
+        try:
+            with open(img_path, "wb") as f:
+                f.write(img_bytes)
+
+            ledger = []
+            if os.path.exists(self.ledger_file):
+                try:
+                    with open(self.ledger_file, "r", encoding="utf-8") as f:
+                        ledger = json.load(f)
+                except Exception:
+                    ledger = []
+
+            ledger.append(dossier_entry)
+            if len(ledger) > 150:
+                old_entries = ledger[:-150]
+                ledger = ledger[-150:]
+                for old in old_entries:
+                    try:
+                        old_img = os.path.join(self.output_dir, old.get("forensic_integrity", {}).get("image_file", ""))
+                        if os.path.exists(old_img):
+                            os.remove(old_img)
+                    except Exception:
+                        pass
+
+            with open(self.ledger_file, "w", encoding="utf-8") as f:
+                json.dump(ledger, f, indent=2)
+
+            print(f"[SEC-65B EVIDENCE COMMITTED] {img_filename} | SHA256: {sha256_hash[:16]}...")
+        except Exception as e:
+            print(f"[SEC-65B ERROR] Failed to persist evidence: {e}")
 
     def generate_certificate_html(self, incident_uuid: str) -> str:
         """Generates print-ready formal Section 65B Forensic Certificate."""

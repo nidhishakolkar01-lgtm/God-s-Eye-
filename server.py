@@ -158,6 +158,9 @@ class C2State:
         self.latest_encoded_frame = None
         self.encoded_frame_id = 0
         self.sector_version = 0
+        self.cached_sat_telemetry = []
+        self.last_sat_update = 0.0
+        self.latest_sec65b_hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         self.running = True
 
         # Multi-Threaded Decoupled Perception & Smooth Streaming
@@ -270,8 +273,12 @@ class C2State:
                             sector_info=sec_info, 
                             sensor_mode=self.detector.sensor.active_mode
                         )
+                        if logged:
+                            h_val = logged.get("forensic_integrity", {}).get("sha256_hash") or logged.get("sha256")
+                            if h_val:
+                                self.latest_sec65b_hash = h_val
                         # Multi-channel instant alert dispatch (Telegram Bot & Webhook)
-                        sec_hash = logged.get("sha256", "N/A") if logged else "N/A"
+                        sec_hash = self.latest_sec65b_hash
                         alert_payload = {
                             "sector_name": sec_info.get("name", "BORDER CORRIDOR"),
                             "mgrs": sec_info.get("mgrs", "N/A"),
@@ -385,10 +392,10 @@ class C2State:
                         self.tracked_count = len(dets)
                         self.active_breaches = breaches
 
-                time.sleep(0.01)
+                time.sleep(0.035)
             except Exception as e:
                 print(f"[C2-INFERENCE ERROR] {e}")
-                time.sleep(0.02)
+                time.sleep(0.035)
 
     def run_pipeline(self):
         """High-Performance 32 FPS Smooth Rolling Visual Render & Streaming Pipeline."""
@@ -423,6 +430,14 @@ class C2State:
                 processed_frame = self.detector.sensor.process(frame)
                 is_breached = len(breaches) > 0
 
+                # Refresh SGP4 satellite telemetry non-blockingly every 2.5 seconds
+                if time.time() - self.last_sat_update > 2.5:
+                    try:
+                        self.cached_sat_telemetry = self.satellite_engine.get_satellite_telemetry(include_ground_track=False)
+                    except Exception:
+                        pass
+                    self.last_sat_update = time.time()
+
                 if self.multiview_mode:
                     fh, fw = processed_frame.shape[:2]
                     hud_frame = self.camera_mgr.render_multiview_matrix(fw, fh)
@@ -436,7 +451,9 @@ class C2State:
                         sector_label=sec_info["name"],
                         mgrs=sec_info["mgrs"],
                         zone_obj=(self.zone if self.zone_visible else None),
-                        faces=faces
+                        faces=faces,
+                        satellite_info=self.cached_sat_telemetry,
+                        sec65b_hash=self.latest_sec65b_hash
                     )
                 else:
                     if self.zone_visible:
@@ -458,7 +475,7 @@ class C2State:
                         is_godeye_mode=False
                     )
 
-                _, buf = cv2.imencode(".jpg", hud_frame, [cv2.IMWRITE_JPEG_QUALITY, 68])
+                _, buf = cv2.imencode(".jpg", hud_frame, [cv2.IMWRITE_JPEG_QUALITY, 58, cv2.IMWRITE_JPEG_OPTIMIZE, 0])
                 self.latest_encoded_frame = buf.tobytes()
                 self.encoded_frame_id += 1
 

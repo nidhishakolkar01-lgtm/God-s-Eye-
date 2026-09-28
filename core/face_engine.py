@@ -162,8 +162,8 @@ class FaceRecognitionEngine:
 
         orig_h, orig_w = frame.shape[:2]
         
-        # Optimize inference: scale down if frame is huge (>720p) for sub-10ms detection
-        target_w = min(orig_w, 640)
+        # Optimize inference: scale down to 320px for sub-8ms deep face detection
+        target_w = min(orig_w, 320)
         scale = target_w / float(orig_w)
         target_h = int(orig_h * scale)
 
@@ -178,6 +178,10 @@ class FaceRecognitionEngine:
         results = []
         if not ret or faces is None:
             return results
+
+        # Process top 3 most prominent faces to keep CPU fast and responsive
+        if len(faces) > 3:
+            faces = sorted(faces, key=lambda f: f[14], reverse=True)[:3]
 
         inv_scale = 1.0 / scale if scale > 0 else 1.0
 
