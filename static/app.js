@@ -12,14 +12,33 @@ let autoHandoffActive = true;
 let currentSensorMode = "NORMAL";
 
 // Initialize Dashboard
-document.addEventListener('DOMContentLoaded', () => {
-    initMap();
-    initControls();
-    startPolling();
-    initClocks();
-    fetchEnrolledFaces();
-    fetchGlobalCameras();
-});
+function bootDashboard() {
+    console.log("[TRINETRA-C2] Booting Defense Tactical Operations Center...");
+    try { initClocks(); } catch(e) { console.error("initClocks error:", e); }
+    try { initControls(); } catch(e) { console.error("initControls error:", e); }
+    try { initStreamMonitor(); } catch(e) { console.error("initStreamMonitor error:", e); }
+    try { startPolling(); } catch(e) { console.error("startPolling error:", e); }
+    try { initMap(); } catch(e) { console.error("initMap error:", e); }
+    try { fetchEnrolledFaces(); } catch(e) { console.error("fetchEnrolledFaces error:", e); }
+    try { fetchGlobalCameras(); } catch(e) { console.error("fetchGlobalCameras error:", e); }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootDashboard);
+} else {
+    bootDashboard();
+}
+
+function initStreamMonitor() {
+    const img = document.getElementById('live-stream');
+    if (!img) return;
+    img.onerror = function() {
+        console.warn('[C2 Stream] Stream disconnected or errored. Reconnecting in 1.5s...');
+        setTimeout(() => {
+            img.src = '/api/stream?_t=' + Date.now();
+        }, 1500);
+    };
+}
 
 // 1. Defense Clocks (IST / UTC)
 function initClocks() {
@@ -35,19 +54,32 @@ function initClocks() {
 
 // 2. Geospatial Map (Leaflet.js + CartoDB Dark)
 function initMap() {
-    map = L.map('tactical-map', {
-        zoomControl: false,
-        attributionControl: false
-    }).setView([31.604, 74.572], 6);
+    if (typeof L === 'undefined') {
+        console.warn("[TRINETRA-C2] Leaflet library not loaded yet, retrying in 500ms...");
+        setTimeout(initMap, 500);
+        return;
+    }
+    const mapEl = document.getElementById('tactical-map');
+    if (!mapEl || map) return;
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 10,
-        subdomains: 'abcd'
-    }).addTo(map);
+    try {
+        map = L.map('tactical-map', {
+            zoomControl: false,
+            attributionControl: false
+        }).setView([31.604, 74.572], 6);
 
-    fetch('/api/sectors')
-        .then(res => res.json())
-        .then(sectors => renderSectors(sectors));
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 10,
+            subdomains: 'abcd'
+        }).addTo(map);
+
+        fetch('/api/sectors')
+            .then(res => res.json())
+            .then(sectors => renderSectors(sectors))
+            .catch(e => console.error("Failed fetching sectors for map:", e));
+    } catch(err) {
+        console.error("Map initialization exception:", err);
+    }
 }
 
 function renderSectors(sectors) {
@@ -60,16 +92,18 @@ function renderSectors(sectors) {
         const isBreached = s.status && s.status.includes('BREACH');
         const markerColor = isBreached ? '#ff2244' : (isSelected ? '#00f0ff' : '#00ff77');
 
-        if (!sectorMarkers[s.id]) {
-            const icon = L.divIcon({
-                className: 'custom-radar-blip',
-                html: `<div style="width: 12px; height: 12px; border-radius: 50%; background: ${markerColor}; border: 2px solid #fff; box-shadow: 0 0 8px ${markerColor}; cursor: pointer;"></div>`,
-                iconSize: [12, 12]
-            });
+        if (typeof L !== 'undefined' && map && !sectorMarkers[s.id]) {
+            try {
+                const icon = L.divIcon({
+                    className: 'custom-radar-blip',
+                    html: `<div style="width: 12px; height: 12px; border-radius: 50%; background: ${markerColor}; border: 2px solid #fff; box-shadow: 0 0 8px ${markerColor}; cursor: pointer;"></div>`,
+                    iconSize: [12, 12]
+                });
 
-            const marker = L.marker([s.lat, s.lng], { icon: icon }).addTo(map);
-            marker.on('click', () => switchSector(s.id));
-            sectorMarkers[s.id] = marker;
+                const marker = L.marker([s.lat, s.lng], { icon: icon }).addTo(map);
+                marker.on('click', () => switchSector(s.id));
+                sectorMarkers[s.id] = marker;
+            } catch(e) {}
         }
 
         const card = document.createElement('div');
@@ -456,117 +490,138 @@ function startPolling() {
 }
 
 function updateTelemetry(t) {
-    document.getElementById('telem-fps').innerText = t.fps.toFixed(1);
-    document.getElementById('telem-lat').innerText = `${Math.round(t.latency_ms)}ms`;
-    document.getElementById('telem-faces').innerText = t.faces_detected !== undefined ? t.faces_detected : 0;
-    if (t.enrolled_faces_count !== undefined) {
-        document.getElementById('telem-enrolled').innerText = t.enrolled_faces_count;
-    }
-    const elPlates = document.getElementById('telem-plates');
-    if (elPlates && t.anpr_scans_count !== undefined) elPlates.innerText = t.anpr_scans_count;
-    const elWatchlist = document.getElementById('telem-watchlist');
-    if (elWatchlist && t.anpr_watchlist_count !== undefined) elWatchlist.innerText = t.anpr_watchlist_count;
+    if (!t) return;
+    try {
+        const elFps = document.getElementById('telem-fps');
+        if (elFps && t.fps !== undefined) elFps.innerText = Number(t.fps).toFixed(1);
 
-    const elReidChip = document.getElementById('telem-reid-chip');
-    if (elReidChip && t.reid_entities_count !== undefined) elReidChip.innerText = `${t.reid_entities_count} G-IDS`;
+        const elLat = document.getElementById('telem-lat');
+        if (elLat && t.latency_ms !== undefined) elLat.innerText = `${Math.round(t.latency_ms)}ms`;
 
-    syncSensorUI(t.sensor_mode, t.scope_mask, t.clahe_enabled);
-    if (t.gods_eye_mode !== undefined) syncGodsEyeUI(t.gods_eye_mode);
-    const btnZone = document.getElementById('btn-zone-toggle');
-    if (btnZone && t.zone_visible !== undefined) {
-        btnZone.innerText = t.zone_visible ? '[Z] ZONE: ON' : '[Z] ZONE: OFF';
-    }
-    const btnHandoff = document.getElementById('btn-handoff-toggle');
-    if (btnHandoff && t.auto_handoff !== undefined) {
-        btnHandoff.innerText = t.auto_handoff ? '[A] HANDOFF: ON' : '[A] HANDOFF: OFF';
-        if (t.auto_handoff) btnHandoff.classList.add('active');
-        else btnHandoff.classList.remove('active');
-    }
-    if (t.multiview_mode !== undefined) syncMultiviewUI(t.multiview_mode);
-    if (t.hardware) updateHardwareUI(t.hardware);
+        const elFaces = document.getElementById('telem-faces');
+        if (elFaces && t.faces_detected !== undefined) elFaces.innerText = t.faces_detected;
 
-    const elGlobalChip = document.getElementById('telem-globalcams-chip');
-    if (elGlobalChip && t.global_cams_count !== undefined) {
-        elGlobalChip.innerText = `${t.global_cams_count} LIVE`;
-    }
+        const elEnrolled = document.getElementById('telem-enrolled');
+        if (elEnrolled && t.enrolled_faces_count !== undefined) {
+            elEnrolled.innerText = t.enrolled_faces_count;
+        }
 
-    const elFarrChip = document.getElementById('telem-farr-chip');
-    if (elFarrChip && t.farr) {
-        elFarrChip.innerText = `${t.farr.farr_percentage}%`;
-    }
+        const elPlates = document.getElementById('telem-plates');
+        if (elPlates && t.anpr_scans_count !== undefined) elPlates.innerText = t.anpr_scans_count;
 
-    const elAlertChip = document.getElementById('telem-alert-chip');
-    if (elAlertChip && t.alerts_config) {
-        elAlertChip.innerText = t.alerts_config.telegram_enabled ? 'TG: ON' : 'STANDBY';
-        elAlertChip.style.color = t.alerts_config.telegram_enabled ? 'var(--c-green)' : 'var(--c-cyan)';
-    }
+        const elWatchlist = document.getElementById('telem-watchlist');
+        if (elWatchlist && t.anpr_watchlist_count !== undefined) elWatchlist.innerText = t.anpr_watchlist_count;
 
-    if (t.farr && document.getElementById('modal-farr') && document.getElementById('modal-farr').style.display !== 'none') {
-        updateFarrUI(t.farr);
-    }
+        const elReidChip = document.getElementById('telem-reid-chip');
+        if (elReidChip && t.reid_entities_count !== undefined) elReidChip.innerText = `${t.reid_entities_count} G-IDS`;
 
-    const elQrtChip = document.getElementById('telem-qrt-chip');
-    const chipQrtBox = document.getElementById('qrt-telem-chip');
-    if (elQrtChip) {
-        if (t.interdiction) {
-            elQrtChip.innerText = `INTERCEPT (${Math.round(t.interdiction.countdown_seconds)}s)`;
-            elQrtChip.style.color = 'var(--c-red)';
-            if (chipQrtBox) chipQrtBox.style.borderColor = 'var(--c-red)';
-            updateInterdictionQuickBanner(t.interdiction);
+        if (typeof syncSensorUI === 'function') syncSensorUI(t.sensor_mode, t.scope_mask, t.clahe_enabled);
+        if (t.gods_eye_mode !== undefined && typeof syncGodsEyeUI === 'function') syncGodsEyeUI(t.gods_eye_mode);
+
+        const btnZone = document.getElementById('btn-zone-toggle');
+        if (btnZone && t.zone_visible !== undefined) {
+            btnZone.innerText = t.zone_visible ? '[Z] ZONE: ON' : '[Z] ZONE: OFF';
+        }
+
+        const btnHandoff = document.getElementById('btn-handoff-toggle');
+        if (btnHandoff && t.auto_handoff !== undefined) {
+            btnHandoff.innerText = t.auto_handoff ? '[A] HANDOFF: ON' : '[A] HANDOFF: OFF';
+            if (t.auto_handoff) btnHandoff.classList.add('active');
+            else btnHandoff.classList.remove('active');
+        }
+
+        if (t.multiview_mode !== undefined && typeof syncMultiviewUI === 'function') syncMultiviewUI(t.multiview_mode);
+        if (t.hardware && typeof updateHardwareUI === 'function') updateHardwareUI(t.hardware);
+
+        const elGlobalChip = document.getElementById('telem-globalcams-chip');
+        if (elGlobalChip && t.global_cams_count !== undefined) {
+            elGlobalChip.innerText = `${t.global_cams_count} LIVE`;
+        }
+
+        const elFarrChip = document.getElementById('telem-farr-chip');
+        if (elFarrChip && t.farr) {
+            elFarrChip.innerText = `${t.farr.farr_percentage}%`;
+        }
+
+        const elAlertChip = document.getElementById('telem-alert-chip');
+        if (elAlertChip && t.alerts_config) {
+            elAlertChip.innerText = t.alerts_config.telegram_enabled ? 'TG: ON' : 'STANDBY';
+            elAlertChip.style.color = t.alerts_config.telegram_enabled ? 'var(--c-green)' : 'var(--c-cyan)';
+        }
+
+        if (t.farr && document.getElementById('modal-farr') && document.getElementById('modal-farr').style.display !== 'none') {
+            if (typeof updateFarrUI === 'function') updateFarrUI(t.farr);
+        }
+
+        const elQrtChip = document.getElementById('telem-qrt-chip');
+        const chipQrtBox = document.getElementById('qrt-telem-chip');
+        if (elQrtChip) {
+            if (t.interdiction) {
+                elQrtChip.innerText = `INTERCEPT (${Math.round(t.interdiction.countdown_seconds)}s)`;
+                elQrtChip.style.color = 'var(--c-red)';
+                if (chipQrtBox) chipQrtBox.style.borderColor = 'var(--c-red)';
+                if (typeof updateInterdictionQuickBanner === 'function') updateInterdictionQuickBanner(t.interdiction);
+            } else {
+                elQrtChip.innerText = 'READY';
+                elQrtChip.style.color = 'var(--c-green)';
+                if (chipQrtBox) chipQrtBox.style.borderColor = 'rgba(0, 255, 119, 0.3)';
+            }
+        }
+
+        const statusEl = document.getElementById('telem-status');
+        const chipEl = document.getElementById('status-chip');
+        const bannerEl = document.getElementById('breach-banner');
+
+        if (t.is_breached) {
+            if (statusEl) {
+                statusEl.innerText = `CRITICAL INCURSION (${t.breach_count || 0})`;
+                statusEl.style.color = 'var(--c-red)';
+            }
+            if (chipEl) chipEl.style.borderColor = 'var(--c-red)';
+            if (bannerEl) bannerEl.style.display = 'block';
+
+            if (!t.audio_muted && (t.breach_count || 0) > lastBreachCount) {
+                try { playTacticalChirp(); } catch(e){}
+            }
         } else {
-            elQrtChip.innerText = 'READY';
-            elQrtChip.style.color = 'var(--c-green)';
-            if (chipQrtBox) chipQrtBox.style.borderColor = 'rgba(0, 255, 119, 0.3)';
-        }
-    }
-
-    const statusEl = document.getElementById('telem-status');
-    const chipEl = document.getElementById('status-chip');
-    const bannerEl = document.getElementById('breach-banner');
-
-    if (t.is_breached) {
-        statusEl.innerText = `CRITICAL INCURSION (${t.breach_count})`;
-        statusEl.style.color = 'var(--c-red)';
-        chipEl.style.borderColor = 'var(--c-red)';
-        bannerEl.style.display = 'block';
-
-        if (!t.audio_muted && t.breach_count > lastBreachCount) {
-            playTacticalChirp();
-        }
-    } else {
-        statusEl.innerText = 'SENTRY SECURE';
-        statusEl.style.color = 'var(--c-green)';
-        chipEl.style.borderColor = 'rgba(0, 255, 119, 0.3)';
-        bannerEl.style.display = 'none';
-    }
-
-    // Autonomous Handoff Alert Banner
-    if (t.latest_handoff && t.latest_handoff.timestamp) {
-        if (!window._lastHandoffTs || window._lastHandoffTs !== t.latest_handoff.timestamp) {
-            window._lastHandoffTs = t.latest_handoff.timestamp;
-            const handoffEl = document.getElementById('handoff-banner');
-            if (handoffEl) {
-                handoffEl.innerText = `*** AUTONOMOUS HANDOFF: SECTOR-0${t.latest_handoff.from_sector} -> SECTOR-0${t.latest_handoff.to_sector} (${t.latest_handoff.reason}) ***`;
-                handoffEl.style.display = 'block';
-                setTimeout(() => { handoffEl.style.display = 'none'; }, 4500);
+            if (statusEl) {
+                statusEl.innerText = 'SENTRY SECURE';
+                statusEl.style.color = 'var(--c-green)';
             }
-            if (t.sector_id && t.sector_id !== activeSectorId) {
-                activeSectorId = t.sector_id;
-                highlightSectorButton(t.sector_id);
-                refreshSectors();
+            if (chipEl) chipEl.style.borderColor = 'rgba(0, 255, 119, 0.3)';
+            if (bannerEl) bannerEl.style.display = 'none';
+        }
+
+        // Autonomous Handoff Alert Banner
+        if (t.latest_handoff && t.latest_handoff.timestamp) {
+            if (!window._lastHandoffTs || window._lastHandoffTs !== t.latest_handoff.timestamp) {
+                window._lastHandoffTs = t.latest_handoff.timestamp;
+                const handoffEl = document.getElementById('handoff-banner');
+                if (handoffEl) {
+                    handoffEl.innerText = `*** AUTONOMOUS HANDOFF: SECTOR-0${t.latest_handoff.from_sector} -> SECTOR-0${t.latest_handoff.to_sector} (${t.latest_handoff.reason}) ***`;
+                    handoffEl.style.display = 'block';
+                    setTimeout(() => { if (handoffEl) handoffEl.style.display = 'none'; }, 4500);
+                }
+                if (t.sector_id && t.sector_id !== activeSectorId) {
+                    activeSectorId = t.sector_id;
+                    highlightSectorButton(t.sector_id);
+                    refreshSectors();
+                }
             }
         }
-    }
 
-    if (t.sector_id && t.sector_id !== activeSectorId) {
-        activeSectorId = t.sector_id;
-        highlightSectorButton(t.sector_id);
-        refreshSectors();
-    }
+        if (t.sector_id && t.sector_id !== activeSectorId) {
+            activeSectorId = t.sector_id;
+            highlightSectorButton(t.sector_id);
+            refreshSectors();
+        }
 
-    lastBreachCount = t.breach_count;
-    renderSTSI(t.stsi);
-    updateSpotlightDossier(t);
+        lastBreachCount = t.breach_count || 0;
+        if (t.stsi !== undefined && typeof renderSTSI === 'function') renderSTSI(t.stsi);
+        if (typeof updateSpotlightDossier === 'function') updateSpotlightDossier(t);
+    } catch(err) {
+        console.error("[C2 Telemetry Update Error]", err);
+    }
 }
 
 function renderSTSI(activeStsi) {

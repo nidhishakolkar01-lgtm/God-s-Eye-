@@ -656,18 +656,28 @@ def stream_single_camera(cam_id: str):
     return StreamingResponse(gen(), media_type="multipart/x-mixed-replace; boundary=frame")
 
 @app.get("/api/stream")
-async def stream_video():
+async def stream_video(request: Request):
     async def frame_generator():
         last_frame_id = -1
-        while True:
-            fid = c2.encoded_frame_id
-            if fid != last_frame_id:
-                frame_bytes = c2.latest_encoded_frame
-                if frame_bytes:
-                    last_frame_id = fid
-                    yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
-            await asyncio.sleep(0.005)
-    return StreamingResponse(frame_generator(), media_type="multipart/x-mixed-replace; boundary=frame")
+        try:
+            while not await request.is_disconnected():
+                fid = c2.encoded_frame_id
+                if fid != last_frame_id:
+                    frame_bytes = c2.latest_encoded_frame
+                    if frame_bytes:
+                        last_frame_id = fid
+                        yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
+                await asyncio.sleep(0.01)
+        except (asyncio.CancelledError, GeneratorExit):
+            pass
+    return StreamingResponse(
+        frame_generator(), 
+        media_type="multipart/x-mixed-replace; boundary=frame",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            "Pragma": "no-cache"
+        }
+    )
 
 @app.get("/api/snapshot")
 async def get_snapshot():
