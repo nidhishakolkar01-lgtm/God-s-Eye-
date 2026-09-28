@@ -32,6 +32,7 @@
       <button class="btn-head-action" onclick="openFarrModal()" style="border-color: var(--c-green); color: var(--c-green);" title="False Alarm Reduction Rate (FARR) & Animal Noise Filter">[FARR] NOISE FILTER</button>
       <button class="btn-head-action" onclick="openAlertsModal()" style="border-color: var(--c-cyan); color: var(--c-cyan);" title="Multi-Channel Instant Alert Dispatch (Telegram Bot & Webhook)">[ALERTS] TELEGRAM</button>
       <button class="btn-head-action" id="btn-head-qrt" onclick="openInterdictionModal()" style="border-color: var(--c-red); color: var(--c-red);" title="Autonomous QRT Interdiction Dispatch & Intercept Vectoring">[QRT] INTERDICTION</button>
+      <button class="btn-head-action" id="btn-head-bridge" onclick="toggleCommandBay()" style="border-color: var(--c-cyan); color: var(--c-cyan);" title="Toggle Tactical Command Bridge Drawer [B]">[BRIDGE] TAC-BAY</button>
       <button class="btn-head-action" id="btn-toggle-multiview" onclick="toggleMultiview()" title="Toggle 2x2 Composite Multi-Camera Sentry Matrix [X]">[GRID] 2x2 MATRIX</button>
       <button class="btn-head-action" onclick="openGlobalCamsModal()" title="Global Strategic Node Catalog">[CATALOG]</button>
       <button class="btn-head-action" onclick="openWatchlistModal()" title="View and Enroll Suspect Vehicle License Plates">[ANPR] PLATES</button>
@@ -105,10 +106,10 @@
     </div>
   </header>
 
-  <!-- 3. MAIN TACTICAL GRID -->
+  <!-- 3. MAIN TACTICAL GRID: TWO-RAIL COCKPIT -->
   <main class="c2-grid" id="main-grid">
 
-    <!-- COLUMN 1: GEOSPATIAL MAP & SECTORS -->
+    <!-- COLUMN 1: LEFT RAIL - GEOSPATIAL MAP & SENTRY SECTORS -->
     <section class="panel panel-left" id="panel-left">
       <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
         <span>GEOSPATIAL & SATELLITE RADAR</span>
@@ -118,41 +119,59 @@
           <button class="btn-mini" onclick="openFullGlobeModal()" title="Full-Screen 3D Earth Digital Twin">[EXPAND]</button>
         </div>
       </div>
-      <div id="tactical-map" style="position: relative; height: 260px;"></div>
-      <div id="cesium-globe-mini" style="position: relative; height: 260px; display: none; background: #000;"></div>
+      <div id="tactical-map" style="position: relative; height: 210px;"></div>
+      <div id="cesium-globe-mini" style="position: relative; height: 210px; display: none; background: #000;"></div>
       
       <div class="panel-header" style="border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
-        <span>SENTRY FEEDS & CAMERAS</span>
+        <span>SENTRY SECTORS</span>
         <div style="display: flex; gap: 4px;">
           <button class="btn-mini" id="btn-left-multiview" onclick="toggleMultiview()" title="Toggle 2x2 Composite Multi-Camera Matrix">2x2 GRID</button>
           <button class="btn-mini" onclick="openCctvModal()" title="Add / Connect Live Camera Node">+ ADD</button>
         </div>
       </div>
       <div class="panel-body">
-        <div class="sector-list" id="sector-list"></div>
+        <div class="sector-command-deck sector-list" id="sector-list"></div>
+
+        <!-- ISRO SATELLITE PASS COUNTDOWN CARD -->
+        <div class="satellite-pass-card" id="sat-recon-card" onclick="openSatelliteModal()" style="cursor: pointer; margin-top: auto;" title="Click to view full ISRO orbital ephemeris">
+          <div class="sat-card-top">
+            <span class="sat-name"><span>&#128752;</span> <span id="recon-sat-name">CARTOSAT-3 (ISRO)</span></span>
+            <span class="card-stsi-pill" id="recon-sat-next" style="color: var(--c-cyan);">T-18m PASS</span>
+          </div>
+          <div class="sat-orbit-stats">
+            <div><span style="color: var(--text-dim);">ALT:</span> <span id="recon-sat-alt" style="color: #fff;">505 km</span></div>
+            <div><span style="color: var(--text-dim);">AZ:</span> <span id="recon-sat-az" style="color: #fff;">142.4°</span></div>
+            <div><span style="color: var(--text-dim);">EL:</span> <span id="recon-sat-el" style="color: var(--c-green);">+48.1°</span></div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- COLUMN 2: EXPANSIVE LIVE PERCEPTION STREAM -->
+    <!-- COLUMN 2: CENTER COCKPIT - DOMINANT 16:9 VIDEO & SENSOR CONTROLS -->
     <section class="panel panel-center" id="panel-center">
       <div class="panel-header">
-        <span>LIVE PERCEPTION & BIOMETRIC FACE STREAM</span>
+        <div class="stream-header-info">
+          <span>LIVE PERCEPTION & SENTRY STREAM</span>
+          <span id="stream-sector-title" class="sector-tag">SECTOR-01 // PUNJAB FENCE</span>
+        </div>
         <div class="header-stream-tools">
           <span id="header-sensor-badge" style="color: var(--c-cyan); font-size: 10px; margin-right: 8px;">YUNET + SFACE + YOLOV8n</span>
-          <button class="btn-mini" onclick="toggleTheaterMode()">EXPAND</button>
+          <button class="btn-mini" onclick="toggleTheaterMode()">EXPAND [T]</button>
         </div>
       </div>
 
-      <!-- MULTI-SPECTRAL SENSOR CONTROLS -->
-      <div class="sensor-bar">
-        <button class="btn-sensor godseye-btn active" id="btn-godseye" onclick="toggleGodsEye()" title="Toggle Omniscient God's Eye HUD">[G] GOD'S EYE: ON</button>
-        <button class="btn-sensor active" id="btn-mode-normal" onclick="setSensorMode('NORMAL')">RGB DAYLIGHT</button>
-        <button class="btn-sensor" id="btn-mode-nvg" onclick="setSensorMode('NVG_P43')">PVS-14 NVG</button>
-        <button class="btn-sensor" id="btn-mode-ironbow" onclick="setSensorMode('FLIR_IRONBOW')">FLIR IRONBOW</button>
-        <button class="btn-sensor" id="btn-mode-whot" onclick="setSensorMode('FLIR_WHOT')">FLIR WHITE-HOT</button>
-        <button class="btn-sensor" id="btn-mode-scope" onclick="toggleScopeMask()">SCOPE MASK</button>
-        <button class="btn-sensor" id="btn-zone-toggle" onclick="toggleZone()" title="Toggle Exclusion Polygon / Tripwire Overlay">[Z] ZONE: ON</button>
-        <button class="btn-sensor" id="btn-handoff-toggle" onclick="toggleAutoHandoff()" title="Toggle Autonomous Inter-Camera Sector Handoff">[A] HANDOFF: OFF</button>
+      <!-- MULTI-SPECTRAL FLOATING SENSOR DOCK -->
+      <div class="floating-sensor-dock sensor-bar">
+        <div class="sensor-button-group">
+          <button class="btn-sensor godseye-btn active" id="btn-godseye" onclick="toggleGodsEye()" title="Toggle Omniscient God's Eye HUD">[G] GOD'S EYE: ON</button>
+          <button class="btn-sensor active" id="btn-mode-normal" onclick="setSensorMode('NORMAL')">RGB DAYLIGHT</button>
+          <button class="btn-sensor" id="btn-mode-nvg" onclick="setSensorMode('NVG_P43')">PVS-14 NVG</button>
+          <button class="btn-sensor" id="btn-mode-ironbow" onclick="setSensorMode('FLIR_IRONBOW')">FLIR IRONBOW</button>
+          <button class="btn-sensor" id="btn-mode-whot" onclick="setSensorMode('FLIR_WHOT')">FLIR WHITE-HOT</button>
+          <button class="btn-sensor" id="btn-mode-scope" onclick="toggleScopeMask()">SCOPE MASK</button>
+          <button class="btn-sensor" id="btn-zone-toggle" onclick="toggleZone()" title="Toggle Exclusion Polygon / Tripwire Overlay">[Z] ZONE: ON</button>
+          <button class="btn-sensor" id="btn-handoff-toggle" onclick="toggleAutoHandoff()" title="Toggle Autonomous Inter-Camera Sector Handoff">[A] HANDOFF: OFF</button>
+        </div>
         <button class="btn-sensor reset-btn" id="btn-reset-stream" onclick="resetStreamSensors()" title="Reset to standard optical daylight RGB and clear all sensor filters">[R] RESET STREAM</button>
       </div>
 
@@ -169,6 +188,7 @@
 
       <!-- TACTICAL ACTION DECK -->
       <div class="control-bar">
+        <button class="btn-tactical highlight-btn" id="btn-deck-bridge" onclick="toggleCommandBay()" title="Open/Close Command Bridge Drawer">[&#9650; BRIDGE]</button>
         <button class="btn-tactical highlight-btn" id="btn-deck-multiview" onclick="toggleMultiview()">[GRID] 2x2 MATRIX</button>
         <button class="btn-tactical" onclick="connectWebcam(0)">[CAM 0] WEBCAM</button>
         <button class="btn-tactical" onclick="openCctvModal()">[RTSP] CONNECT CCTV</button>
@@ -205,64 +225,188 @@
       </div>
     </section>
 
-    <!-- COLUMN 3: STSI RADAR & EVIDENCE VAULT -->
+    <!-- COLUMN 3: RIGHT RAIL - ACTIONABLE THREAT INTEL & TARGET DOSSIER -->
     <section class="panel panel-right" id="panel-right">
       <div class="panel-header">
-        <span>SECTOR THREAT SEVERITY (STSI)</span>
-        <span style="color: var(--text-muted); font-size: 10px;">RISK MATRIX</span>
-      </div>
-      <div style="padding: 10px;">
-        <div class="stsi-panel" id="stsi-bars"></div>
+        <span>THREAT INTELLIGENCE & DOSSIER</span>
+        <span class="header-tag" id="threat-level-tag">DEFCON-4 // ACTIVE</span>
       </div>
 
-      <div class="panel-header" style="border-top: 1px solid var(--border-subtle);">
-        <span>ENROLLED BIOMETRICS</span>
-        <span style="color: var(--c-cyan); font-size: 10px;" id="enrolled-badge">DATABASE</span>
-      </div>
-      <div style="padding: 8px 10px; border-bottom: 1px solid var(--border-subtle);">
-        <div class="enrolled-pills" id="enrolled-pills"></div>
-      </div>
-
-      <div class="panel-header" style="border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
-        <span>ANPR SCANNED VEHICLES</span>
-        <span style="color: var(--c-cyan); font-size: 10px;" id="anpr-badge">LIVE FEED</span>
-      </div>
-      <div style="padding: 6px 10px; max-height: 120px; overflow-y: auto; border-bottom: 1px solid var(--border-subtle);">
-        <div class="anpr-feed" id="anpr-feed">
-          <div style="color: var(--text-dim); font-size: 10px; text-align: center; padding: 10px;">Awaiting vehicle scans...</div>
-        </div>
-      </div>
-
-      <div class="panel-header" style="border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
-        <span>CROSS-CAMERA REID (G-TRACK)</span>
-        <span style="color: var(--c-cyan); font-size: 10px; cursor: pointer;" onclick="openReidModal()" id="reid-status-badge">0 ENTITIES</span>
-      </div>
-      <div style="padding: 6px 10px; max-height: 120px; overflow-y: auto; border-bottom: 1px solid var(--border-subtle);">
-        <div class="reid-feed" id="reid-feed">
-          <div style="color: var(--text-dim); font-size: 10px; text-align: center; padding: 10px;">Awaiting person sightings...</div>
-        </div>
-      </div>
-
-      <div class="panel-header" style="border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
-        <span>ORBITAL RECON (SGP4 LIVE)</span>
-        <span style="color: var(--c-cyan); font-size: 10px; cursor: pointer;" onclick="openSatelliteModal()" id="sat-status-badge">5 BIRDS TRACKED</span>
-      </div>
-      <div style="padding: 6px 10px; max-height: 135px; overflow-y: auto; border-bottom: 1px solid var(--border-subtle);">
-        <div class="satellites-feed" id="satellites-feed">
-          <div style="color: var(--text-dim); font-size: 10px; text-align: center; padding: 10px;">Propagating orbital ephemeris...</div>
-        </div>
-      </div>
-
-      <div class="panel-header" style="border-top: 1px solid var(--border-subtle);">
-        <span>CRYPTOGRAPHIC EVIDENCE</span>
-        <span style="color: var(--c-cyan); font-size: 10px;">SEC 65B</span>
-      </div>
       <div class="panel-body">
-        <div class="evidence-feed" id="evidence-feed"></div>
+        <!-- UNIFIED TARGET INSPECTION DOSSIER (SPOTLIGHT HERO CARD) -->
+        <div class="target-dossier-card" id="hero-target-dossier">
+          <div class="dossier-header-row">
+            <span class="dossier-tag" id="dossier-tag">TARGET DOSSIER // T-01</span>
+            <span class="dossier-threat-badge" id="dossier-threat-badge">MONITORING</span>
+          </div>
+          <div class="dossier-grid">
+            <div class="dossier-stat-item">
+              <div class="dossier-stat-label">TARGET CLASS</div>
+              <div class="dossier-stat-val" id="dossier-target-class">PERIMETER_PROWLER</div>
+            </div>
+            <div class="dossier-stat-item">
+              <div class="dossier-stat-label">KINEMATICS / SPD</div>
+              <div class="dossier-stat-val" id="dossier-target-speed">2.4 m/s (BRG 042°)</div>
+            </div>
+            <div class="dossier-stat-item">
+              <div class="dossier-stat-label">PERIMETER DISTANCE</div>
+              <div class="dossier-stat-val" id="dossier-target-distance">18.5 METERS</div>
+            </div>
+            <div class="dossier-stat-item">
+              <div class="dossier-stat-label">INTERCEPT ETA</div>
+              <div class="dossier-stat-val" id="dossier-target-eta" style="color: var(--c-amber);">00:42 SEC</div>
+            </div>
+          </div>
+          <div class="dossier-bio-strip" id="dossier-bio-strip">
+            <span id="dossier-scan-type" style="color: var(--c-cyan); font-weight:700;">BIOMETRIC SCAN:</span>
+            <span id="dossier-scan-val" style="color: #fff;">ANALYZING FACIAL LANDMARKS...</span>
+          </div>
+          <div class="dossier-sec65b-strip">
+            <span>SEC 65B EVIDENCE HASH:</span>
+            <span id="dossier-sec65b-hash" style="color: var(--c-cyan); font-size: 8px;">0x7F4A...B82E (SHA-256)</span>
+          </div>
+          <button class="btn-dossier-dispatch" id="btn-dossier-dispatch" onclick="openInterdictionModal()">
+            <span>&#9889;</span> <span>DISPATCH QRT INTERCEPT</span>
+          </button>
+        </div>
+
+        <!-- SECTOR THREAT SEVERITY (STSI) RISK MATRIX -->
+        <div class="panel-header" style="padding: 0 4px; height: 26px; font-size: 11px; background: transparent; border: none;">
+          <span>SECTOR THREAT SEVERITY (STSI)</span>
+          <span style="color: var(--text-muted); font-size: 9px;">RISK MATRIX</span>
+        </div>
+        <div class="stsi-panel" id="stsi-bars" style="margin-bottom: 6px;"></div>
+
+        <!-- ENROLLED BIOMETRICS -->
+        <div class="panel-header" style="padding: 0 4px; height: 26px; font-size: 11px; background: transparent; border: none;">
+          <span>ENROLLED BIOMETRICS</span>
+          <span style="color: var(--c-cyan); font-size: 9px; cursor: pointer;" onclick="openEnrollModal()">+ ENROLL</span>
+        </div>
+        <div style="margin-bottom: 6px;">
+          <div class="enrolled-pills" id="enrolled-pills"></div>
+        </div>
+
+        <!-- ANPR SCANNED VEHICLES -->
+        <div class="panel-header" style="padding: 0 4px; height: 26px; font-size: 11px; background: transparent; border: none; display: flex; justify-content: space-between;">
+          <span>ANPR SCANNED VEHICLES</span>
+          <span style="color: var(--c-cyan); font-size: 9px; cursor: pointer;" onclick="openWatchlistModal()" id="anpr-badge">WATCHLIST</span>
+        </div>
+        <div style="max-height: 110px; overflow-y: auto; margin-bottom: 6px;">
+          <div class="anpr-feed" id="anpr-feed">
+            <div style="color: var(--text-dim); font-size: 9px; text-align: center; padding: 6px;">Awaiting vehicle scans...</div>
+          </div>
+        </div>
+
+        <!-- CROSS-CAMERA REID -->
+        <div class="panel-header" style="padding: 0 4px; height: 26px; font-size: 11px; background: transparent; border: none; display: flex; justify-content: space-between;">
+          <span>CROSS-CAMERA REID</span>
+          <span style="color: var(--c-cyan); font-size: 9px; cursor: pointer;" onclick="openReidModal()" id="reid-status-badge">0 ENTITIES</span>
+        </div>
+        <div style="max-height: 100px; overflow-y: auto; margin-bottom: 6px;">
+          <div class="reid-feed" id="reid-feed">
+            <div style="color: var(--text-dim); font-size: 9px; text-align: center; padding: 6px;">Awaiting person sightings...</div>
+          </div>
+        </div>
+
+        <!-- ORBITAL RECON (SGP4) -->
+        <div class="panel-header" style="padding: 0 4px; height: 26px; font-size: 11px; background: transparent; border: none; display: flex; justify-content: space-between;">
+          <span>ORBITAL RECON (SGP4)</span>
+          <span style="color: var(--c-cyan); font-size: 9px; cursor: pointer;" onclick="openSatelliteModal()" id="sat-status-badge">5 BIRDS</span>
+        </div>
+        <div style="max-height: 100px; overflow-y: auto; margin-bottom: 6px;">
+          <div class="satellites-feed" id="satellites-feed">
+            <div style="color: var(--text-dim); font-size: 9px; text-align: center; padding: 6px;">Propagating orbital ephemeris...</div>
+          </div>
+        </div>
+
+        <!-- CRYPTOGRAPHIC EVIDENCE -->
+        <div class="panel-header" style="padding: 0 4px; height: 26px; font-size: 11px; background: transparent; border: none; display: flex; justify-content: space-between;">
+          <span>CRYPTOGRAPHIC EVIDENCE</span>
+          <span style="color: var(--c-green); font-size: 9px;">SEC 65B</span>
+        </div>
+        <div class="evidence-feed" id="evidence-feed" style="max-height: 110px; overflow-y: auto;"></div>
       </div>
     </section>
 
   </main>
+
+  <!-- 4. COMMAND BRIDGE: BOTTOM EXPANDABLE TACTICAL BAY -->
+  <aside class="bottom-command-bay" id="bottom-command-bay">
+    <div class="bay-header">
+      <div class="bay-tabs">
+        <span style="font-family: var(--font-tactical); font-size: 12px; font-weight: 800; color: var(--c-cyan); margin-right: 12px; display: flex; align-items: center; gap: 6px;">
+          <span class="status-dot"></span> COMMAND BRIDGE
+        </span>
+        <button class="bay-tab-btn active" id="bay-tab-multiview" onclick="switchBayTab('multiview')">2x2 SENTRY MATRIX</button>
+        <button class="bay-tab-btn" id="bay-tab-reid" onclick="switchBayTab('reid')">REID ENTITY GALLERY</button>
+        <button class="bay-tab-btn" id="bay-tab-satellites" onclick="switchBayTab('satellites')">ISRO SATELLITE PASSES</button>
+        <button class="bay-tab-btn" id="bay-tab-evidence" onclick="switchBayTab('evidence')">SEC 65B EVIDENCE VAULT</button>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <span style="font-family: var(--font-mono); font-size: 9px; color: var(--text-dim);">PRESS [B] TO TOGGLE</span>
+        <button class="btn-mini" onclick="toggleCommandBay()">&#9660; MINIMIZE</button>
+      </div>
+    </div>
+    <div class="bay-content" id="bay-content-body">
+      <!-- Tab 1: Multiview 2x2 Matrix Preview & Quick Controls -->
+      <div class="bay-tab-pane" id="pane-multiview" style="display: flex; gap: 14px; height: 100%;">
+        <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; height: 175px;">
+          <div style="background: #020406; border: 1px solid var(--border-subtle); border-radius: 4px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <span style="position: absolute; top: 4px; left: 6px; font-family: var(--font-mono); font-size: 9px; color: var(--c-cyan); background: rgba(0,0,0,0.7); padding: 1px 4px; border-radius: 2px;">SEC-01 // PUNJAB</span>
+            <span style="color: var(--text-dim); font-size: 10px; font-family: var(--font-mono);">&#9679; CAM 01 ONLINE (30 FPS)</span>
+          </div>
+          <div style="background: #020406; border: 1px solid var(--border-subtle); border-radius: 4px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <span style="position: absolute; top: 4px; left: 6px; font-family: var(--font-mono); font-size: 9px; color: var(--c-cyan); background: rgba(0,0,0,0.7); padding: 1px 4px; border-radius: 2px;">SEC-02 // PERIMETER CORDON</span>
+            <span style="color: var(--text-dim); font-size: 10px; font-family: var(--font-mono);">&#9679; CAM 02 ONLINE (30 FPS)</span>
+          </div>
+          <div style="background: #020406; border: 1px solid var(--border-subtle); border-radius: 4px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <span style="position: absolute; top: 4px; left: 6px; font-family: var(--font-mono); font-size: 9px; color: var(--c-cyan); background: rgba(0,0,0,0.7); padding: 1px 4px; border-radius: 2px;">SEC-03 // CHECKPOST</span>
+            <span style="color: var(--text-dim); font-size: 10px; font-family: var(--font-mono);">&#9679; CAM 03 ONLINE (30 FPS)</span>
+          </div>
+          <div style="background: #020406; border: 1px solid var(--border-subtle); border-radius: 4px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <span style="position: absolute; top: 4px; left: 6px; font-family: var(--font-mono); font-size: 9px; color: var(--c-cyan); background: rgba(0,0,0,0.7); padding: 1px 4px; border-radius: 2px;">SEC-04 // INTERDICTION POST</span>
+            <span style="color: var(--text-dim); font-size: 10px; font-family: var(--font-mono);">&#9679; CAM 04 ONLINE (30 FPS)</span>
+          </div>
+        </div>
+        <div style="width: 250px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-family: var(--font-tactical); font-size: 11px; color: var(--c-cyan); font-weight: 700;">MATRIX CONTROLS:</div>
+          <button class="btn-tactical highlight-btn" onclick="toggleMultiview()">SWITCH MAIN VIEW TO 2x2</button>
+          <button class="btn-tactical" onclick="openCctvManagerModal()">RTSP CAMERA MANAGER</button>
+          <button class="btn-tactical" onclick="openGlobalCamsModal()">OPEN GLOBAL STRATEGIC CATALOG</button>
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); line-height: 1.4;">
+            Synchronized quad-feed rendering with parallel YOLOv8 inference across all tactical perimeter nodes.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: ReID Entity Gallery -->
+      <div class="bay-tab-pane" id="pane-reid" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-family: var(--font-tactical); font-size: 11px; color: var(--c-cyan); font-weight: 700;">CROSS-CAMERA GLOBAL ENTITY TRACKS</span>
+          <button class="btn-mini" onclick="openReidModal()">OPEN FULL GALLERY</button>
+        </div>
+        <div id="reid-feed-bridge" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px;"></div>
+      </div>
+
+      <!-- Tab 3: ISRO Satellite Pass Tracker -->
+      <div class="bay-tab-pane" id="pane-satellites" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-family: var(--font-tactical); font-size: 11px; color: var(--c-cyan); font-weight: 700;">ISRO SATELLITE RECONNAISSANCE PASSES (SGP4 PROPAGATION)</span>
+          <button class="btn-mini" onclick="openSatelliteModal()">VIEW ORBITAL MAP</button>
+        </div>
+        <div id="satellites-feed-bridge" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px;"></div>
+      </div>
+
+      <!-- Tab 4: Cryptographic Evidence Ledger -->
+      <div class="bay-tab-pane" id="pane-evidence" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-family: var(--font-tactical); font-size: 11px; color: var(--c-cyan); font-weight: 700;">SECTION 65B CERTIFIED EVIDENCE AUDIT LEDGER</span>
+          <button class="btn-mini" onclick="fetchEvidence()">REFRESH VAULT</button>
+        </div>
+        <div id="evidence-feed-bridge" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px;"></div>
+      </div>
+    </div>
+  </aside>
 
   <!-- MODAL: CONNECT CCTV / RTSP / WEBCAM -->
   <div class="modal-overlay" id="modal-cctv" style="display: none;">

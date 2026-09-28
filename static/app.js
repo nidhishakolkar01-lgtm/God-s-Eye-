@@ -57,7 +57,8 @@ function renderSectors(sectors) {
 
     sectors.forEach(s => {
         const isSelected = s.id === activeSectorId;
-        const markerColor = isSelected ? '#00f0ff' : '#00ff77';
+        const isBreached = s.status && s.status.includes('BREACH');
+        const markerColor = isBreached ? '#ff2244' : (isSelected ? '#00f0ff' : '#00ff77');
 
         if (!sectorMarkers[s.id]) {
             const icon = L.divIcon({
@@ -72,18 +73,21 @@ function renderSectors(sectors) {
         }
 
         const card = document.createElement('div');
-        card.className = `sector-card ${isSelected ? 'active' : ''}`;
+        card.className = `sector-command-card ${isSelected ? 'active' : ''} ${isBreached ? 'breach-alert' : ''}`;
         card.onclick = () => switchSector(s.id);
         card.innerHTML = `
-            <div class="sector-card-top">
-                <span class="sector-name">${s.name}</span>
-                <span style="color: ${s.stsi > 70 ? 'var(--c-red)' : 'var(--c-cyan)'}; font-size: 10px; font-weight: 800;">
+            <div class="card-top-row">
+                <div class="card-title-group">
+                    <span class="card-beacon ${isBreached ? 'breach' : ''}"></span>
+                    <span class="card-name">${s.name}</span>
+                </div>
+                <span class="card-stsi-pill" style="color: ${s.stsi > 70 ? 'var(--c-red)' : 'var(--c-cyan)'};">
                     STSI: ${s.stsi}
                 </span>
             </div>
-            <div class="sector-meta">
-                <span>${s.type}</span>
-                <span style="color: ${s.status.includes('BREACH') ? 'var(--c-red)' : 'var(--text-muted)'}">${s.status}</span>
+            <div class="card-sub-row">
+                <span class="card-type-badge">${s.type}</span>
+                <span class="card-mgrs">${s.mgrs || 'GRID ZONE'}</span>
             </div>
         `;
         listContainer.appendChild(card);
@@ -276,8 +280,10 @@ function switchSector(sectorId) {
             .then(res => res.json())
             .then(sectors => {
                 const target = sectors.find(s => s.id === sectorId);
-                if (target && map) {
-                    map.flyTo([target.lat, target.lng], 7, { duration: 1.2 });
+                if (target) {
+                    const titleEl = document.getElementById('stream-sector-title');
+                    if (titleEl) titleEl.innerText = `${target.name.toUpperCase()} // ${target.mgrs || 'GRID'}`;
+                    if (map) map.flyTo([target.lat, target.lng], 7, { duration: 1.2 });
                 }
             });
     });
@@ -420,6 +426,7 @@ function initControls() {
         if (e.key.toLowerCase() === 'k') toggleScopeMask();
         if (e.key.toLowerCase() === 'r') resetStreamSensors();
         if (e.key.toLowerCase() === 'p') openWatchlistModal();
+        if (e.key.toLowerCase() === 'b') toggleCommandBay();
         if (e.key.toLowerCase() === 'x') toggleMultiview();
         if (e.key.toLowerCase() === 'u') toggleAutoTrack();
         if (e.key === 'ArrowLeft') { e.preventDefault(); jogTurret(-5, 0); }
@@ -559,6 +566,7 @@ function updateTelemetry(t) {
 
     lastBreachCount = t.breach_count;
     renderSTSI(t.stsi);
+    updateSpotlightDossier(t);
 }
 
 function renderSTSI(activeStsi) {
@@ -577,6 +585,157 @@ function renderSTSI(activeStsi) {
             </div>
         </div>
     `;
+}
+
+// 7b. Unified Target Inspection Dossier (Hero Spotlight Card)
+function updateSpotlightDossier(t) {
+    const cardEl = document.getElementById('hero-target-dossier');
+    if (!cardEl) return;
+
+    const dossierTag = document.getElementById('dossier-tag');
+    const threatBadge = document.getElementById('dossier-threat-badge');
+    const targetClass = document.getElementById('dossier-target-class');
+    const targetSpeed = document.getElementById('dossier-target-speed');
+    const targetDist = document.getElementById('dossier-target-distance');
+    const targetEta = document.getElementById('dossier-target-eta');
+    const scanType = document.getElementById('dossier-scan-type');
+    const scanVal = document.getElementById('dossier-scan-val');
+    const bioStrip = document.getElementById('dossier-bio-strip');
+    const sec65bHash = document.getElementById('dossier-sec65b-hash');
+
+    // Update Sec 65B Cryptographic hash stamp
+    if (sec65bHash && t.latest_sec65b_hash) {
+        sec65bHash.innerText = `${t.latest_sec65b_hash.substring(0, 10)}...${t.latest_sec65b_hash.substring(58)} (SHA-256)`;
+    }
+
+    // Update ISRO Satellite Pass Card
+    if (t.satellite_recon) {
+        const satName = document.getElementById('recon-sat-name');
+        const satNext = document.getElementById('recon-sat-next');
+        const satAlt = document.getElementById('recon-sat-alt');
+        const satAz = document.getElementById('recon-sat-az');
+        const satEl = document.getElementById('recon-sat-el');
+        if (satName) satName.innerText = t.satellite_recon.name || 'CARTOSAT-3';
+        if (satNext) satNext.innerText = `T-${t.satellite_recon.next_pass_min || 18}m PASS`;
+        if (satAlt) satAlt.innerText = `${t.satellite_recon.altitude_km || 505} km`;
+        if (satAz) satAz.innerText = `${t.satellite_recon.azimuth_deg || 142.4}°`;
+        if (satEl) satEl.innerText = `${t.satellite_recon.elevation_deg > 0 ? '+' : ''}${t.satellite_recon.elevation_deg || 48.1}°`;
+    }
+
+    // Biometric / ANPR live matching
+    if (t.latest_face && t.latest_face.name) {
+        if (scanType) scanType.innerText = 'BIOMETRIC MATCH:';
+        if (scanVal) scanVal.innerText = `${t.latest_face.name} (${Math.round((t.latest_face.confidence || 0.94) * 100)}% CONF)`;
+        if (bioStrip) bioStrip.classList.remove('alert');
+    } else if (t.latest_anpr && t.latest_anpr.plate) {
+        if (scanType) scanType.innerText = 'ANPR SCAN:';
+        if (scanVal) scanVal.innerText = `${t.latest_anpr.plate} [${t.latest_anpr.status || 'SCANNED'}]`;
+        if (bioStrip) {
+            if (t.latest_anpr.status === 'HOTLIST_WANTED') bioStrip.classList.add('alert');
+            else bioStrip.classList.remove('alert');
+        }
+    } else {
+        if (scanType) scanType.innerText = 'SENSOR SCAN:';
+        if (scanVal) scanVal.innerText = t.is_breached ? 'TRACKING INTRUDER SIGNATURE' : 'ALL PERIMETER VECTORS NOMINAL';
+        if (bioStrip) bioStrip.classList.remove('alert');
+    }
+
+    // Threat Dossier State & Kinematics
+    if (t.interdiction) {
+        const i = t.interdiction;
+        cardEl.classList.add('breach-lock');
+        if (dossierTag) dossierTag.innerText = `TARGET // ${i.target_id || 'T-ALPHA'}`;
+        if (threatBadge) {
+            threatBadge.className = 'dossier-threat-badge breach';
+            threatBadge.innerText = `${i.threat_level || 'HIGH'} ALERT`;
+        }
+        if (targetClass) targetClass.innerText = i.target_class || 'PERIMETER_PROWLER';
+        if (targetSpeed) targetSpeed.innerText = `${(i.speed_mps || 2.4).toFixed(1)} m/s (BRG ${Math.round(i.heading_deg || 42)}°)`;
+        if (targetDist) targetDist.innerText = `${Math.round(i.distance_m || 18)} METERS`;
+        if (targetEta) targetEta.innerText = `T-${Math.max(0, Math.round(i.countdown_seconds || 35))}s ETA`;
+    } else if (t.is_breached) {
+        cardEl.classList.add('breach-lock');
+        const b = t.primary_breach || {};
+        if (dossierTag) dossierTag.innerText = `INCURSION // T-0${t.breach_count || 1}`;
+        if (threatBadge) {
+            threatBadge.className = 'dossier-threat-badge breach';
+            threatBadge.innerText = 'BREACH CONFIRMED';
+        }
+        if (targetClass) targetClass.innerText = b.class || 'INTRUDER_HOSTILE';
+        if (targetSpeed) targetSpeed.innerText = '2.8 m/s (CLOSING)';
+        if (targetDist) targetDist.innerText = '14.2 METERS';
+        if (targetEta) targetEta.innerText = '00:28 SEC';
+    } else {
+        cardEl.classList.remove('breach-lock');
+        if (dossierTag) dossierTag.innerText = 'SURVEILLANCE SWEEP';
+        if (threatBadge) {
+            threatBadge.className = 'dossier-threat-badge';
+            threatBadge.innerText = 'MONITORING';
+        }
+        if (targetClass) targetClass.innerText = 'SECTOR_PATROL';
+        if (targetSpeed) targetSpeed.innerText = '0.0 m/s (STATIONARY)';
+        if (targetDist) targetDist.innerText = 'CLEAR (>100m)';
+        if (targetEta) targetEta.innerText = 'STANDBY';
+    }
+}
+
+// 7c. Command Bridge Tactical Drawer Controls
+function toggleCommandBay() {
+    const bay = document.getElementById('bottom-command-bay');
+    const btn = document.getElementById('btn-head-bridge');
+    if (!bay) return;
+    const isOpen = bay.classList.toggle('open');
+    if (btn) {
+        if (isOpen) {
+            btn.classList.add('active');
+            btn.style.background = 'rgba(0, 240, 255, 0.25)';
+        } else {
+            btn.classList.remove('active');
+            btn.style.background = '';
+        }
+    }
+    if (isOpen) {
+        syncBridgeReid();
+        syncBridgeSatellites();
+        syncBridgeEvidence();
+    }
+}
+
+function switchBayTab(tabName) {
+    const tabs = ['multiview', 'reid', 'satellites', 'evidence'];
+    tabs.forEach(t => {
+        const btn = document.getElementById(`bay-tab-${t}`);
+        const pane = document.getElementById(`pane-${t}`);
+        if (btn) {
+            if (t === tabName) btn.classList.add('active');
+            else btn.classList.remove('active');
+        }
+        if (pane) {
+            pane.style.display = (t === tabName) ? (t === 'multiview' ? 'flex' : 'block') : 'none';
+        }
+    });
+
+    if (tabName === 'reid') syncBridgeReid();
+    if (tabName === 'satellites') syncBridgeSatellites();
+    if (tabName === 'evidence') syncBridgeEvidence();
+}
+
+function syncBridgeReid() {
+    const src = document.getElementById('reid-feed');
+    const dst = document.getElementById('reid-feed-bridge');
+    if (src && dst) dst.innerHTML = src.innerHTML;
+}
+
+function syncBridgeSatellites() {
+    const src = document.getElementById('satellites-feed');
+    const dst = document.getElementById('satellites-feed-bridge');
+    if (src && dst) dst.innerHTML = src.innerHTML;
+}
+
+function syncBridgeEvidence() {
+    const src = document.getElementById('evidence-feed');
+    const dst = document.getElementById('evidence-feed-bridge');
+    if (src && dst) dst.innerHTML = src.innerHTML;
 }
 
 // 8. Cryptographic Evidence Vault
