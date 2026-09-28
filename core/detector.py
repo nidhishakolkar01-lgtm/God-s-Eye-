@@ -153,6 +153,7 @@ class TacticalDetector:
         """Flushes tracker state, trajectory history, and frame caches on sector or resolution change."""
         self.cached_detections = []
         self.cached_faces = []
+        self.frame_idx = 0  # Immediately force full perception on the new sector's first frame!
         try:
             self.kinematics.trajectories.clear()
             self.kinematics.last_seen.clear()
@@ -164,6 +165,14 @@ class TacticalDetector:
                     for t in self.model.predictor.trackers:
                         if hasattr(t, "reset"):
                             t.reset()
+                        if hasattr(t, "tracked_stracks"):
+                            t.tracked_stracks.clear()
+                        if hasattr(t, "lost_stracks"):
+                            t.lost_stracks.clear()
+                        if hasattr(t, "removed_stracks"):
+                            t.removed_stracks.clear()
+                        if hasattr(t, "frame_id"):
+                            t.frame_id = 0
                 elif hasattr(self.model.predictor, "trackers"):
                     delattr(self.model.predictor, "trackers")
         except Exception:
@@ -193,7 +202,7 @@ class TacticalDetector:
         enhanced_lab = cv2.merge((l_boosted, a, b))
         return cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
 
-    def detect(self, frame, fence_coords=None):
+    def detect(self, frame, fence_coords=None, imgsz: Optional[int] = None):
         """
         Executes perception, deep face recognition, tracking, and kinematics.
         Returns:
@@ -203,6 +212,7 @@ class TacticalDetector:
             inference_ms: inference latency in milliseconds
         """
         t0 = time.perf_counter()
+        target_imgsz = imgsz if imgsz is not None else self.imgsz
         
         # Reset tracker state automatically if frame dimensions changed
         curr_shape = frame.shape[:2]
@@ -214,7 +224,7 @@ class TacticalDetector:
         if self.clahe_enabled:
             input_frame = self.preprocess_clahe(frame)
 
-        # Alternate-frame execution for silky smooth 30+ FPS
+        # Alternate-frame execution for silky smooth 30+ FPS (always runs on frame 0 or cache empty)
         run_full_inference = (self.frame_idx % 2 == 0) or (len(self.cached_detections) == 0)
         self.frame_idx += 1
 
@@ -224,7 +234,7 @@ class TacticalDetector:
                 results = self.model.track(
                     input_frame, 
                     conf=self.conf_thresh, 
-                    imgsz=self.imgsz,
+                    imgsz=target_imgsz,
                     classes=None, 
                     tracker="bytetrack.yaml",
                     persist=True, 
@@ -234,7 +244,7 @@ class TacticalDetector:
                 results = self.model(
                     input_frame, 
                     conf=self.conf_thresh, 
-                    imgsz=self.imgsz,
+                    imgsz=target_imgsz,
                     classes=None, 
                     verbose=False
                 )

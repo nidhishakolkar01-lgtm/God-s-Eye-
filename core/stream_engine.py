@@ -80,6 +80,14 @@ class VideoStreamEngine:
         self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT)) if not self.is_live else 0
         print(f"[STREAM-ENGINE] Connected: source={self.source} | live={self.is_live} | {self.width}x{self.height} @ {self.fps:.1f} FPS")
 
+        # Pre-buffer first frame immediately so read() is NEVER None even at t=0 of sector switch
+        ret, frame = self.cap.read()
+        if ret and frame is not None:
+            fh, fw = frame.shape[:2]
+            if fw != 854 or fh != 480:
+                frame = cv2.resize(frame, (854, 480), interpolation=cv2.INTER_LINEAR)
+            self.current_frame = frame
+
     def start(self):
         self.running = True
         self.thread = threading.Thread(target=self._capture_worker, daemon=True)

@@ -180,16 +180,15 @@ class CameraNetworkManager:
             print(f"[CAM-MANAGER] Slot #{slot_id} reassigned to {name} ({source})")
             return info
 
-    def activate_camera(self, camera_id: int):
-        """Switches primary active focus camera and releases other live network connections."""
+    def activate_camera(self, camera_id: int, allow_multiview: bool = False):
+        """Switches primary active focus camera and releases inactive streams to conserve CPU."""
         with self.lock:
             if camera_id not in self.camera_info:
                 return False
             
-            for cid, s in list(self.streams.items()):
-                if cid != camera_id:
-                    src_str = str(self.camera_info.get(cid, {}).get("source", "")).lower()
-                    if src_str.startswith("rtsp://") or src_str.startswith("http://"):
+            if not allow_multiview:
+                for cid, s in list(self.streams.items()):
+                    if cid != camera_id:
                         try:
                             s.stop()
                         except Exception:
@@ -201,6 +200,8 @@ class CameraNetworkManager:
             self.active_camera_id = camera_id
             if camera_id not in self.streams or not self.streams[camera_id].running:
                 self._start_stream_locked(camera_id)
+            if camera_id in self.camera_info:
+                self.camera_info[camera_id]["is_active"] = True
             return True
 
     def get_frame(self, camera_id: int) -> Tuple[bool, Optional[np.ndarray]]:

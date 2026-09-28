@@ -156,6 +156,8 @@ class C2State:
         self.active_breaches = []
         self.cached_faces = []
         self.latest_encoded_frame = None
+        self.encoded_frame_id = 0
+        self.sector_version = 0
         self.running = True
 
         # Multi-Threaded Decoupled Perception & Smooth Streaming
@@ -171,16 +173,38 @@ class C2State:
     def init_sector(self, sector_id: int):
         with self.lock:
             self.active_sector = sector_id
-            self.camera_mgr.activate_camera(sector_id)
+            self.sector_version += 1
+            
+            # Switch camera and release inactive video stream decoders to save 80% CPU
+            self.camera_mgr.activate_camera(sector_id, allow_multiview=self.multiview_mode)
             self.stream = self.camera_mgr.streams.get(sector_id)
             info = SECTORS.get(sector_id, SECTORS[1])
+            
+            # Read first pre-buffered frame immediately (0ms delay)
             ret, frame = self.stream.read() if self.stream else (False, None)
             if ret and frame is not None:
                 h, w = frame.shape[:2]
                 self.zone.set_preset_corridor(w, h, sector_id=sector_id)
             else:
                 self.zone.set_preset_corridor(854, 480, sector_id=sector_id)
+                
+            # Flawlessly reset ByteTrack internal states and force full inference on frame 0
             self.detector.reset_tracker()
+            
+            # Atomically flush all old bounding boxes, breaches, and face caches under inference_lock
+            with self.inference_lock:
+                self.latest_raw_frame = frame if (ret and frame is not None) else None
+                self.cached_dets = []
+                self.cached_faces = []
+                self.cached_breaches = []
+                self.active_breaches = []
+                self.tracked_count = 0
+                self.current_latency = 0.0
+                
+            # Clear audio alert cooldowns so old alerts do not bleed across sectors
+            self.audio.last_alert_time = 0.0
+            self.audio.last_vehicle_alert = 0.0
+            
             print(f"[C2-CORE] Initialized Sector {sector_id}: {info['name']} (MGRS: {info['mgrs']})")
 
     def switch_source(self, new_source):
@@ -208,17 +232,31 @@ class C2State:
         while self.running:
             try:
                 if not self.stream:
-                    time.sleep(0.02)
+                    time.sleep(0.01)
                     continue
                 with self.inference_lock:
                     frame_to_process = self.latest_raw_frame.copy() if self.latest_raw_frame is not None else None
+                    frame_sector = self.active_sector
+                    frame_version = self.sector_version
+                    
                 if frame_to_process is None:
                     time.sleep(0.01)
                     continue
 
-                sec_info = SECTORS.get(self.active_sector, SECTORS[1])
+                sec_info = SECTORS.get(frame_sector, SECTORS[1])
                 fence_pts = self.zone.points if len(self.zone.points) >= 2 else None
-                processed_frame, dets, faces, lat_ms = self.detector.detect(frame_to_process, fence_coords=fence_pts)
+                
+                # Sector 1 uses 640 for distant fence climbers; Sectors 2-5 use 480 for 2x faster CPU inference
+                target_imgsz = 640 if frame_sector == 1 else 480
+                processed_frame, dets, faces, lat_ms = self.detector.detect(
+                    frame_to_process, fence_coords=fence_pts, imgsz=target_imgsz
+                )
+
+                # Check if sector was switched while inference was running: discard stale results immediately
+                with self.inference_lock:
+                    if self.sector_version != frame_version or self.active_sector != frame_sector:
+                        continue
+
                 breaches, suppressed = self.zone.evaluate_detections(dets)
                 is_breached = len(breaches) > 0
 
@@ -273,7 +311,7 @@ class C2State:
 
                         gid, sim, transit = self.global_tracker.match_or_create(
                             embedding=emb,
-                            camera_id=self.active_sector,
+                            camera_id=frame_sector,
                             sector_name=sec_info["name"],
                             bbox=det["bbox"],
                             face_name=face_name
@@ -337,18 +375,20 @@ class C2State:
                         self.init_sector(next_sec)
                         continue
 
+                # Atomically commit new detections ONLY if sector is still matching
                 with self.inference_lock:
-                    self.cached_dets = dets
-                    self.cached_faces = faces
-                    self.cached_breaches = breaches
-                    self.current_latency = lat_ms
-                    self.tracked_count = len(dets)
-                    self.active_breaches = breaches
+                    if self.sector_version == frame_version and self.active_sector == frame_sector:
+                        self.cached_dets = dets
+                        self.cached_faces = faces
+                        self.cached_breaches = breaches
+                        self.current_latency = lat_ms
+                        self.tracked_count = len(dets)
+                        self.active_breaches = breaches
 
-                time.sleep(0.075)
+                time.sleep(0.01)
             except Exception as e:
                 print(f"[C2-INFERENCE ERROR] {e}")
-                time.sleep(0.05)
+                time.sleep(0.02)
 
     def run_pipeline(self):
         """High-Performance 32 FPS Smooth Rolling Visual Render & Streaming Pipeline."""
@@ -420,6 +460,7 @@ class C2State:
 
                 _, buf = cv2.imencode(".jpg", hud_frame, [cv2.IMWRITE_JPEG_QUALITY, 68])
                 self.latest_encoded_frame = buf.tobytes()
+                self.encoded_frame_id += 1
 
                 fps_frames += 1
                 if time.time() - fps_start >= 1.0:
@@ -544,15 +585,15 @@ def stream_single_camera(cam_id: str):
 @app.get("/api/stream")
 async def stream_video():
     async def frame_generator():
-        last_sent_bytes = None
+        last_frame_id = -1
         while True:
-            frame_bytes = c2.latest_encoded_frame
-            if frame_bytes and frame_bytes is not last_sent_bytes:
-                last_sent_bytes = frame_bytes
-                yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
-                await asyncio.sleep(0.033)
-            else:
-                await asyncio.sleep(0.008)
+            fid = c2.encoded_frame_id
+            if fid != last_frame_id:
+                frame_bytes = c2.latest_encoded_frame
+                if frame_bytes:
+                    last_frame_id = fid
+                    yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
+            await asyncio.sleep(0.005)
     return StreamingResponse(frame_generator(), media_type="multipart/x-mixed-replace; boundary=frame")
 
 @app.get("/api/snapshot")

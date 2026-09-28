@@ -244,8 +244,25 @@ function switchCustomSource(src) {
     });
 }
 
+function highlightSectorButton(sectorId) {
+    for (let i = 1; i <= 5; i++) {
+        const btn = document.getElementById(`btn-sector-${i}`);
+        if (btn) {
+            if (i === sectorId) btn.classList.add('highlight-btn');
+            else btn.classList.remove('highlight-btn');
+        }
+    }
+}
+
 function switchSector(sectorId) {
     if (activeSectorId === sectorId) return;
+
+    activeSectorId = sectorId;
+    highlightSectorButton(sectorId);
+
+    // Immediately hide incursion alert banner to prevent ghost alerts across sectors
+    const bannerEl = document.getElementById('breach-banner');
+    if (bannerEl) bannerEl.style.display = 'none';
 
     fetch('/api/control/switch_sector', {
         method: 'POST',
@@ -254,7 +271,6 @@ function switchSector(sectorId) {
     })
     .then(res => res.json())
     .then(data => {
-        activeSectorId = sectorId;
         refreshSectors();
         fetch('/api/sectors')
             .then(res => res.json())
@@ -529,9 +545,16 @@ function updateTelemetry(t) {
             }
             if (t.sector_id && t.sector_id !== activeSectorId) {
                 activeSectorId = t.sector_id;
+                highlightSectorButton(t.sector_id);
                 refreshSectors();
             }
         }
+    }
+
+    if (t.sector_id && t.sector_id !== activeSectorId) {
+        activeSectorId = t.sector_id;
+        highlightSectorButton(t.sector_id);
+        refreshSectors();
     }
 
     lastBreachCount = t.breach_count;
