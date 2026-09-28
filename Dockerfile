@@ -12,7 +12,12 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PORT=8080 \
     YOLO_CONFIG_DIR=/tmp/Ultralytics \
-    OPENCV_FFMPEG_CAPTURE_OPTIONS="rtsp_transport;tcp|fflags;nobuffer|max_delay;0"
+    OPENCV_FFMPEG_CAPTURE_OPTIONS="rtsp_transport;tcp|fflags;nobuffer|max_delay;0" \
+    OMP_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1 \
+    NUMEXPR_NUM_THREADS=1 \
+    VECLIB_MAXIMUM_THREADS=1
 
 # Install essential system dependencies for OpenCV, PyTorch, and video decoders
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -35,7 +40,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Copy and install application dependencies
 COPY requirements-docker.txt .
-RUN pip install --no-cache-dir -r requirements-docker.txt
+RUN pip install --no-cache-dir -r requirements-docker.txt && \
+    python3 -c "import torchvision.models as models; models.mobilenet_v3_small(weights=models.MobileNet_V3_Small_Weights.DEFAULT)"
 
 # Create necessary runtime directories
 RUN mkdir -p /app/evidence /app/static /app/known_faces /app/models /app/sample_footage

@@ -88,18 +88,24 @@ class PersonReIDEngine:
     def batch_extract_embeddings(self, frame: np.ndarray, detections: List[Dict]) -> List[Dict]:
         """Extracts appearance embeddings for all person detections, caching to avoid CPU churn."""
         now = time.time()
+        extracted_this_cycle = 0
         for det in detections:
             if det.get("class_name") == "PERSON":
                 tid = det.get("track_id")
-                # Check cache (refresh every 3 seconds per track)
+                if tid is None:
+                    det["reid_embedding"] = None
+                    continue
+                # Check cache (refresh every 8 seconds per track)
                 cached = self._embedding_cache.get(tid)
-                if cached and (now - cached[0] < 3.0):
+                if cached and (now - cached[0] < 8.0):
                     det["reid_embedding"] = cached[1]
-                else:
+                elif extracted_this_cycle < 2:  # Rate-limit new deep feature extractions to 2 per cycle
                     emb = self.extract_embedding(frame, det["bbox"])
                     det["reid_embedding"] = emb
-                    if emb is not None and tid is not None:
-                        self._embedding_cache[tid] = (now, emb)
+                    self._embedding_cache[tid] = (now, emb)
+                    extracted_this_cycle += 1
+                else:
+                    det["reid_embedding"] = cached[1] if cached else None
             else:
                 det["reid_embedding"] = None
         return detections

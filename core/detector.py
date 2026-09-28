@@ -30,6 +30,7 @@ class TacticalDetector:
         self.cached_detections = []
         self.cached_faces = []
         self.last_shape = None
+        self.last_inference_ms = 42.0
         
         # Multi-spectral sensor simulation engine
         self.sensor = MultiSpectralSensor()
@@ -300,10 +301,12 @@ class TacticalDetector:
             # 4. Deep Appearance Person Re-Identification (ReID) - extract on full inference frames
             detections = self.reid_engine.batch_extract_embeddings(input_frame, detections)
             self.cached_detections = detections
+            self.last_inference_ms = (time.perf_counter() - t0) * 1000.0
+            inference_ms = self.last_inference_ms
         else:
             detections = self.cached_detections
             faces = self.cached_faces
-            inference_ms = (time.perf_counter() - t0) * 1000.0
+            inference_ms = self.last_inference_ms
 
         # Multi-spectral sensor transformation
         processed_frame = self.sensor.process(input_frame)

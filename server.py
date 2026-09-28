@@ -13,6 +13,10 @@ try:
 except Exception:
     pass
 import cv2
+try:
+    cv2.setNumThreads(1)
+except Exception:
+    pass
 import time
 import json
 import base64
@@ -249,8 +253,8 @@ class C2State:
                 sec_info = SECTORS.get(frame_sector, SECTORS[1])
                 fence_pts = self.zone.points if len(self.zone.points) >= 2 else None
                 
-                # Sector 1 uses 640 for distant fence climbers; Sectors 2-5 use 480 for 2x faster CPU inference
-                target_imgsz = 640 if frame_sector == 1 else 480
+                # High-speed edge inference standardized at 480 for 3x faster CPU execution
+                target_imgsz = 480
                 processed_frame, dets, faces, lat_ms = self.detector.detect(
                     frame_to_process, fence_coords=fence_pts, imgsz=target_imgsz
                 )
@@ -392,10 +396,10 @@ class C2State:
                         self.tracked_count = len(dets)
                         self.active_breaches = breaches
 
-                time.sleep(0.035)
+                time.sleep(0.065)
             except Exception as e:
                 print(f"[C2-INFERENCE ERROR] {e}")
-                time.sleep(0.035)
+                time.sleep(0.065)
 
     def run_pipeline(self):
         """High-Performance 32 FPS Smooth Rolling Visual Render & Streaming Pipeline."""
